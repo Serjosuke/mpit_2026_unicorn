@@ -18,46 +18,59 @@ export default function ApprovalsPage() {
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    setLoading(true);
-    try {
-      setItems(await api.pendingExternalRequests());
-    } catch (error) {
-      const message = error instanceof ApiError ? error.detail : "Не удалось загрузить согласования";
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
+  setLoading(true);
+  try {
+    const data = await api.pendingExternalRequests();
+
+    setItems(
+      data.filter(
+        (item) =>
+          item.status === "pending_manager_approval" ||
+          item.status === "pending_hr_approval"
+      )
+    );
+  } catch (error) {
+    const message = error instanceof ApiError ? error.detail : "Не удалось загрузить согласования";
+    toast.error(message);
+  } finally {
+    setLoading(false);
   }
+}
 
   useEffect(() => {
     void load();
   }, []);
 
-  async function act(kind: "approve" | "reject", id: string) {
-    setBusyId(id + kind);
-    try {
-      if (user?.role === "manager" || user?.role === "admin") {
-        if (kind === "approve") {
-          await api.managerApprove(id, "Согласовано через frontend");
-        } else {
-          await api.managerReject(id, "Отклонено через frontend");
-        }
-      } else if (user?.role === "hr") {
-        if (kind === "approve") {
-          await api.hrApprove(id, "Согласовано через frontend");
-        } else {
-          await api.hrReject(id, "Отклонено через frontend");
-        }
+  async function act(kind: "approve" | "reject", id: string, status: string) {
+  setBusyId(id + kind);
+  try {
+    if (status === "pending_manager_approval") {
+      if (kind === "approve") {
+        await api.managerApprove(id, "Согласовано через frontend");
+      } else {
+        await api.managerReject(id, "Отклонено через frontend");
       }
-      toast.success(kind === "approve" ? "Заявка согласована" : "Заявка отклонена");
-      await load();
-    } catch (error) {
-      const message = error instanceof ApiError ? error.detail : "Не удалось обработать заявку";
-      toast.error(message);
-    } finally {
-      setBusyId(null);
+    } else if (status === "pending_hr_approval") {
+      if (kind === "approve") {
+        await api.hrApprove(id, "Согласовано через frontend");
+      } else {
+        await api.hrReject(id, "Отклонено через frontend");
+      }
+    } else {
+      toast.error("Заявка уже не ожидает согласования");
+      return;
     }
+
+    toast.success(kind === "approve" ? "Заявка согласована" : "Заявка отклонена");
+    setItems((prev) => prev.filter((item) => item.id !== id));
+    await load();
+  } catch (error) {
+    const message = error instanceof ApiError ? error.detail : "Не удалось обработать заявку";
+    toast.error(message);
+  } finally {
+    setBusyId(null);
   }
+}
 
   return (
     <AppShell title="Согласования" subtitle="Рабочая зона руководителя и HR для внешних заявок сотрудников">
@@ -87,11 +100,11 @@ export default function ApprovalsPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button className="btn-primary" onClick={() => act("approve", item.id)} disabled={busyId === item.id + "approve"}>
+                  <button className="btn-primary" onClick={() => act("approve", item.id, item.status)}disabled={busyId === item.id + "approve"}>
                     {busyId === item.id + "approve" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                     Согласовать
                   </button>
-                  <button className="btn-danger" onClick={() => act("reject", item.id)} disabled={busyId === item.id + "reject"}>
+                  <button className="btn-danger" onClick={() => act("reject", item.id, item.status)} disabled={busyId === item.id + "reject"}>
                     {busyId === item.id + "reject" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
                     Отклонить
                   </button>
