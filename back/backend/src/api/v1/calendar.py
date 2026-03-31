@@ -1,6 +1,6 @@
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 from jose import JWTError
 from sqlalchemy import select
@@ -15,19 +15,20 @@ from src.models.user_outlook_token import UserOutlookToken
 from src.schemas.calendar import CalendarEventOut
 from src.services.outlook_graph import build_authorize_url, exchange_code_for_tokens, fetch_graph_me, upsert_user_token_from_oauth
 from src.services.audit import write_audit
+from src.services.calendar_sync import resync_internal_course_events_for_user
 
 router = APIRouter()
 
 
 @router.get("/mine", response_model=list[CalendarEventOut])
 def my_calendar_events(db: DBSession, current_user: User = Depends(get_current_user)):
-    stmt = select(CalendarEvent).where(CalendarEvent.user_id == current_user.id).order_by(CalendarEvent.starts_at.desc().nullslast(), CalendarEvent.created_at.desc())
+    stmt = select(CalendarEvent).where(CalendarEvent.user_id == current_user.id).order_by(CalendarEvent.starts_at.asc().nullslast(), CalendarEvent.created_at.desc())
     return list(db.scalars(stmt).all())
 
 
 @router.get("/user/{user_id}", response_model=list[CalendarEventOut])
 def user_calendar_events(user_id: str, db: DBSession, _: User = Depends(require_roles("admin", "hr", "manager"))):
-    stmt = select(CalendarEvent).where(CalendarEvent.user_id == user_id).order_by(CalendarEvent.starts_at.desc().nullslast(), CalendarEvent.created_at.desc())
+    stmt = select(CalendarEvent).where(CalendarEvent.user_id == user_id).order_by(CalendarEvent.starts_at.asc().nullslast(), CalendarEvent.created_at.desc())
     return list(db.scalars(stmt).all())
 
 
@@ -51,27 +52,19 @@ def outlook_connect_url(current_user: User = Depends(get_current_user)):
 
 @router.get("/outlook/callback")
 def outlook_callback(
+    db: DBSession,
     code: str | None = None,
     state: str | None = None,
     error: str | None = None,
-    db: DBSession = None,
     error_description: str | None = None,
 ):
     def _redirect(path: str, **params: str):
         query = urlencode(params)
         separator = "&" if "?" in path else "?"
-        return RedirectResponse(
-            url=f"{settings.frontend_base_url}{path}{separator}{query}"
-            if query
-            else f"{settings.frontend_base_url}{path}"
-        )
+        return RedirectResponse(url=f"{settings.frontend_base_url}{path}{separator}{query}" if query else f"{settings.frontend_base_url}{path}")
 
     if error:
-        return _redirect(
-            settings.outlook_connect_error_path,
-            reason=error,
-            detail=error_description or "OAuth error",
-        )
+        return _redirect(settings.outlook_connect_error_path, reason=error, detail=error_description or "OAuth error")
     if not code or not state:
         return _redirect(settings.outlook_connect_error_path, reason="missing_code")
     try:
@@ -88,15 +81,8 @@ def outlook_callback(
     token_payload = exchange_code_for_tokens(code)
     profile = fetch_graph_me(token_payload["access_token"])
     upsert_user_token_from_oauth(db, user, token_payload, profile)
-    write_audit(
-        db,
-        user.id,
-        "outlook_connect",
-        "user",
-        user.id,
-        None,
-        {"outlook_email": user.outlook_email},
-    )
+    sync_summary = resync_internal_course_events_for_user(db, user)
+    write_audit(db, user.id, "outlook_connect", "user", user.id, None, {"outlook_email": user.outlook_email, **sync_summary})
     db.commit()
     return _redirect(settings.outlook_connect_success_path)
 
@@ -109,3 +95,10 @@ def outlook_disconnect(db: DBSession, current_user: User = Depends(get_current_u
         write_audit(db, current_user.id, "outlook_disconnect", "user", current_user.id, None, None)
         db.commit()
     return {"ok": True}
+
+
+@router.post("/outlook/resync-internal")
+def resync_internal(db: DBSession, current_user: User = Depends(get_current_user)):
+    summary = resync_internal_course_events_for_user(db, current_user)
+    db.commit()
+    return {"ok": True, **summary}

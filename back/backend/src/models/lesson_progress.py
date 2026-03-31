@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, ForeignKey, Numeric, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.base import Base
@@ -12,5 +14,5 @@ class LessonProgress(UUIDMixin, Base):
     enrollment_id: Mapped[str] = mapped_column(ForeignKey("enrollments.id", ondelete="CASCADE"), nullable=False)
     lesson_id: Mapped[str] = mapped_column(ForeignKey("course_lessons.id", ondelete="CASCADE"), nullable=False)
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
-    completed_at: Mapped[str | None] = mapped_column(nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     score: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)

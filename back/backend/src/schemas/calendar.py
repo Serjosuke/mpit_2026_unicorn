@@ -19,5 +19,8 @@ class CalendarEventOut(ORMModel):
     meeting_url: str | None = None
     external_event_id: str | None = None
     location: str | None = None
+    priority: int = 50
+    event_kind: str = "scheduled"
+    is_reminder_only: bool = False
     created_at: datetime
     updated_at: datetime

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     next_public_api_base_url: str = "http://localhost:8000"
     frontend_base_url: str = "http://localhost:3000"
 
-    first_superuser_email: str = "admin@alrosa.local"
+    first_superuser_email: str = "admin@alrosa.com"
     first_superuser_password: str = "Admin12345!"
 
     outlook_client_id: str | None = None
@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     outlook_connect_success_path: str = "/calendar?outlook=connected"
     outlook_connect_error_path: str = "/calendar?outlook=error"
     outlook_sync_enabled: bool = True
+
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-5.4-mini"
+    openai_search_enabled: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", case_sensitive=False)
 

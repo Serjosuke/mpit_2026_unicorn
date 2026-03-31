@@ -1,163 +1,67 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Award, LoaderCircle, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { EmptyState } from "@/components/common/empty-state";
 import { api, ApiError } from "@/lib/api";
-import type { Certificate, Enrollment } from "@/lib/types";
+import type { Certificate } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 export default function CertificatesPage() {
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [items, setItems] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({
-    enrollment_id: "",
-    external_request_id: "",
-    certificate_number: "",
-    issue_date: "",
-    issuer_name: "",
-    verification_url: ""
-  });
+  const [file, setFile] = useState<File | null>(null);
+  const [issuer, setIssuer] = useState("");
+  const [issueDate, setIssueDate] = useState("");
+  const [number, setNumber] = useState("");
 
   async function load() {
     setLoading(true);
-    try {
-      const [certificates, enrollments] = await Promise.all([api.myCertificates(), api.myEnrollments()]);
-      setCertificates(certificates);
-      setEnrollments(enrollments.filter((item) => item.source === "external_approved"));
-    } catch (error) {
-      const message = error instanceof ApiError ? error.detail : "Не удалось загрузить сертификаты";
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
+    try { setItems(await api.myCertificates()); }
+    catch (error) { toast.error(error instanceof ApiError ? error.detail : "Не удалось загрузить сертификаты"); }
+    finally { setLoading(false); }
   }
 
-  useEffect(() => {
-    void load();
-  }, []);
+  useEffect(() => { void load(); }, []);
 
-  const externalEnrollmentOptions = useMemo(() => {
-    return enrollments.map((item) => ({
-      id: item.id,
-      label: `Enrollment ${item.id.slice(0, 8)}`
-    }));
-  }, [enrollments]);
-
-  async function createExternalCertificate(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setCreating(true);
+  async function upload() {
+    if (!file) return toast.error("Выбери PDF или PNG/JPG");
     try {
-      await api.createCertificate({
-        enrollment_id: form.enrollment_id || null,
-        external_request_id: form.external_request_id || null,
-        certificate_number: form.certificate_number || null,
-        issue_date: form.issue_date || null,
-        issuer_name: form.issuer_name || null,
-        verification_url: form.verification_url || null,
-        source: "external"
-      });
-      toast.success("Сертификат сохранён");
-      setForm({
-        enrollment_id: "",
-        external_request_id: "",
-        certificate_number: "",
-        issue_date: "",
-        issuer_name: "",
-        verification_url: ""
-      });
+      await api.uploadCertificate({ source: "manual", issuer_name: issuer, certificate_number: number, issue_date: issueDate, file });
+      toast.success("Сертификат загружен");
+      setFile(null); setIssuer(""); setIssueDate(""); setNumber("");
       await load();
-    } catch (error) {
-      const message = error instanceof ApiError ? error.detail : "Не удалось сохранить сертификат";
-      toast.error(message);
-    } finally {
-      setCreating(false);
-    }
+    } catch (error) { toast.error(error instanceof ApiError ? error.detail : "Не удалось загрузить сертификат"); }
   }
 
   return (
-    <AppShell title="Сертификаты" subtitle="История сертификатов по внутренним и внешним программам обучения">
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="space-y-4">
-          {loading ? (
-            Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="card card-pad">
-                <div className="skeleton h-5 w-36" />
-                <div className="mt-3 skeleton h-4 w-full" />
-              </div>
-            ))
-          ) : certificates.length === 0 ? (
-            <EmptyState
-              title="Сертификатов пока нет"
-              description="После завершения внутреннего курса сертификат создаётся автоматически. Для внешнего обучения его можно добавить вручную."
-            />
-          ) : (
-            certificates.map((certificate) => (
-              <div key={certificate.id} className="card card-pad">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-3xl bg-brand-50 p-3 text-brand-700">
-                    <Award className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">Сертификат #{certificate.id.slice(0, 8)}</h3>
-                    <p className="text-sm text-slate-500">
-                      Источник: {certificate.source} · Дата выдачи: {formatDate(certificate.issue_date || certificate.created_at)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </section>
-
+    <AppShell title="Сертификаты" subtitle="Загружай PDF, PNG или JPG, а затем открывай их из профиля и HR-кабинета.">
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <section className="card card-pad">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="rounded-3xl bg-slate-950 p-3 text-white">
-              <Plus className="h-5 w-5" />
+          <h3 className="text-xl font-bold">Добавить сертификат</h3>
+          <div className="mt-4 space-y-4">
+            <div><label className="label">Кто выдал сертификат</label><input className="input" value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="Например, Алроса LearnFlow" /></div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div><label className="label">Номер</label><input className="input" value={number} onChange={(e) => setNumber(e.target.value)} placeholder="LF-2026-001" /></div>
+              <div><label className="label">Дата выдачи</label><input type="date" className="input" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} /></div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Добавить внешний сертификат</h3>
-              <p className="text-sm text-slate-500">Пока без upload файлов, но с полями для хранения метаданных</p>
+            <div className="rounded-[28px] border border-dashed border-blue-300 bg-blue-50/50 p-5">
+              <label className="label">Файл сертификата</label>
+              <input type="file" accept="application/pdf,image/png,image/jpeg" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              <p className="mt-2 text-xs text-slate-500">Поддерживаются PDF, PNG, JPG. Файл можно будет открыть из профиля.</p>
             </div>
+            <button onClick={upload} className="btn-primary w-full"><Upload className="mr-2 h-4 w-4" />Загрузить сертификат</button>
           </div>
-
-          <form className="space-y-4" onSubmit={createExternalCertificate}>
-            <div>
-              <label className="label">Enrollment внешнего курса</label>
-              <select className="input" value={form.enrollment_id} onChange={(e) => setForm((s) => ({ ...s, enrollment_id: e.target.value }))}>
-                <option value="">Не выбран</option>
-                {externalEnrollmentOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Номер сертификата</label>
-              <input className="input" value={form.certificate_number} onChange={(e) => setForm((s) => ({ ...s, certificate_number: e.target.value }))} />
-            </div>
-            <div>
-              <label className="label">Дата выдачи</label>
-              <input className="input" type="date" value={form.issue_date} onChange={(e) => setForm((s) => ({ ...s, issue_date: e.target.value }))} />
-            </div>
-            <div>
-              <label className="label">Кем выдан</label>
-              <input className="input" value={form.issuer_name} onChange={(e) => setForm((s) => ({ ...s, issuer_name: e.target.value }))} />
-            </div>
-            <div>
-              <label className="label">Ссылка проверки</label>
-              <input className="input" value={form.verification_url} onChange={(e) => setForm((s) => ({ ...s, verification_url: e.target.value }))} />
-            </div>
-            <button className="btn-primary h-12 w-full" disabled={creating}>
-              {creating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Сохранить сертификат"}
-            </button>
-          </form>
+        </section>
+        <section className="card card-pad">
+          <h3 className="text-xl font-bold">Мои сертификаты</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {loading ? Array.from({ length: 4 }).map((_,i)=><div key={i} className="rounded-3xl border border-slate-200 p-4"><div className="skeleton h-5 w-32" /><div className="mt-3 skeleton h-4 w-24" /></div>) : null}
+            {!loading && items.length === 0 ? <div className="rounded-3xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">Пока сертификатов нет.</div> : null}
+            {!loading && items.map((item) => <div key={item.id} className="rounded-[28px] border border-slate-200 p-5"><div className="font-semibold">{item.issuer_name || 'Сертификат обучения'}</div><div className="mt-2 text-sm text-slate-500">Дата выдачи: {formatDate(item.issue_date)}</div><div className="mt-1 text-sm text-slate-500">Номер: {item.certificate_number || '—'}</div>{item.file_url ? <a href={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'}${item.file_url}`} target="_blank" className="mt-4 inline-flex text-sm font-semibold text-blue-600">Открыть файл</a> : null}</div>)}
+          </div>
         </section>
       </div>
     </AppShell>

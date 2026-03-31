@@ -11,10 +11,8 @@ html, body {
 }
 
 body {
-  @apply bg-slate-50 text-slate-900;
-  background-image:
-    radial-gradient(circle at 20% 0%, rgba(52,126,255,0.12), transparent 25%),
-    radial-gradient(circle at 100% 10%, rgba(34,197,94,0.10), transparent 22%);
+  @apply bg-[#f5f7fb] text-slate-900 antialiased;
+  background-image: radial-gradient(circle at top left, rgba(59,130,246,0.08), transparent 28%), radial-gradient(circle at top right, rgba(16,185,129,0.07), transparent 22%);
 }
 
 * {
@@ -22,11 +20,11 @@ body {
 }
 
 .container-page {
-  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  @apply w-full px-3 sm:px-5 lg:px-6 2xl:px-8;
 }
 
 .card {
-  @apply rounded-3xl border border-slate-200 bg-white shadow-soft;
+  @apply rounded-[28px] border border-white/70 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.06)];
 }
 
 .card-pad {
@@ -34,11 +32,11 @@ body {
 }
 
 .btn {
-  @apply inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition;
+  @apply inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed;
 }
 
 .btn-primary {
-  @apply btn bg-brand-600 text-white hover:bg-brand-700;
+  @apply btn bg-blue-600 text-white hover:bg-blue-700;
 }
 
 .btn-secondary {
@@ -50,7 +48,7 @@ body {
 }
 
 .input {
-  @apply h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100;
+  @apply min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100;
 }
 
 .label {
@@ -62,5 +60,26 @@ body {
 }
 
 .skeleton {
-  @apply animate-pulse rounded-2xl bg-slate-200/80;
+  @apply relative overflow-hidden rounded-2xl bg-slate-200/80;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+.fade-up {
+  animation: fadeUp .35s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
