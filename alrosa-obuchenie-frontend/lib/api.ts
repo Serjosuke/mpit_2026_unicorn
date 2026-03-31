@@ -9,7 +9,10 @@ import type {
   Notification,
   Review,
   Token,
-  User
+  User,
+  CalendarEvent,
+  HRDashboardMetrics,
+  OutlookStatus
 } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -145,6 +148,14 @@ export const api = {
 
   myNotifications: () => request<Notification[]>("/notifications/mine"),
   markNotificationRead: (id: string) => request<Notification>(`/notifications/${id}/read`, { method: "POST" }),
+
+  myCalendarEvents: () => request<CalendarEvent[]>("/calendar/mine"),
+  userCalendarEvents: (userId: string) => request<CalendarEvent[]>(`/calendar/user/${userId}`),
+
+  outlookStatus: () => request<OutlookStatus>("/calendar/outlook/status"),
+  outlookConnectUrl: () => request<{ authorize_url: string }>("/calendar/outlook/connect-url"),
+  outlookDisconnect: () => request<{ ok: boolean }>("/calendar/outlook/disconnect", { method: "POST" }),
+  hrDashboardMetrics: () => request<HRDashboardMetrics>("/metrics/hr-dashboard"),
 
   createReview: (payload: { course_id: string; enrollment_id: string; rating: number; comment?: string }) =>
     request<Review>("/reviews/", { method: "POST", body: JSON.stringify(payload) }),

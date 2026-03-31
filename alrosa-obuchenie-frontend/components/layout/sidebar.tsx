@@ -36,6 +36,10 @@ export function Sidebar() {
     items.splice(5, 0, { href: "/approvals", label: "Согласования", icon: ShieldCheck });
   }
 
+  if (user?.role === "hr" || user?.role === "admin") {
+    items.splice(1, 0, { href: "/hr-dashboard", label: "HR / L&D", icon: ShieldCheck });
+  }
+
   return (
     <aside className="hidden w-72 shrink-0 lg:block">
       <div className="sticky top-6 space-y-4">

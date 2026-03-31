@@ -10,6 +10,8 @@ from src.api.v1.certificates import router as certificates_router
 from src.api.v1.reviews import router as reviews_router
 from src.api.v1.notifications import router as notifications_router
 from src.api.v1.audit import router as audit_router
+from src.api.v1.calendar import router as calendar_router
+from src.api.v1.metrics import router as metrics_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
@@ -22,3 +24,5 @@ api_router.include_router(certificates_router, prefix="/certificates", tags=["ce
 api_router.include_router(reviews_router, prefix="/reviews", tags=["reviews"])
 api_router.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
 api_router.include_router(audit_router, prefix="/audit", tags=["audit"])
+api_router.include_router(calendar_router, prefix="/calendar", tags=["calendar"])
+api_router.include_router(metrics_router, prefix="/metrics", tags=["metrics"])

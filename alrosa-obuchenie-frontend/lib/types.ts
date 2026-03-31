@@ -79,3 +79,51 @@ export interface Review {
   comment?: string | null;
   created_at: string;
 }
+
+
+export interface CalendarEvent {
+  id: UUID;
+  user_id: UUID;
+  title: string;
+  description?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  source: string;
+  sync_provider: string;
+  sync_status: string;
+  course_id?: UUID | null;
+  external_request_id?: UUID | null;
+  meeting_url?: string | null;
+  location?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HRDashboardMetrics {
+  total_users: number;
+  total_employees: number;
+  total_trainers: number;
+  total_courses: number;
+  published_courses: number;
+  total_enrollments: number;
+  completed_enrollments: number;
+  active_enrollments: number;
+  completion_rate_percent: number;
+  external_requests_total: number;
+  external_requests_pending_manager: number;
+  external_requests_pending_hr: number;
+  external_requests_approved: number;
+  external_requests_rejected: number;
+  certificates_total: number;
+  reviews_total: number;
+  average_review_rating: number;
+}
+
+
+export interface OutlookStatus {
+  connected: boolean;
+  configured: boolean;
+  outlook_email?: string | null;
+  expires_at?: string | null;
+  scopes: string[];
+}

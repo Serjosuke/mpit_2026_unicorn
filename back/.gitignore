@@ -11,3 +11,6 @@ __pycache__/
 htmlcov/
 .coverage
 alembic/versions/__pycache__/
+.env.local
+!.env.example
+!.env.local.example

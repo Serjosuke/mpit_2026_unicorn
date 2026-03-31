@@ -73,7 +73,7 @@ export default function ApprovalsPage() {
 }
 
   return (
-    <AppShell title="Согласования" subtitle="Рабочая зона руководителя и HR для внешних заявок сотрудников">
+    <AppShell title="Согласования" subtitle="Рабочая зона руководителя и HR / L&D для внешних заявок сотрудников">
       <div className="space-y-4">
         {loading ? (
           Array.from({ length: 5 }).map((_, index) => (
