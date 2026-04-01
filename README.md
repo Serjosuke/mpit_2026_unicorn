@@ -205,7 +205,7 @@
 
 ---
 
-<p align="center"> <b>Сделано с ❤️ командой Unicorn</b><br> 🦄 2025 | VK-Tracker </p> 
+<p align="center"> <b>Сделано с ❤️ командой Unicorn</b><br> 🦄 2026 </p> 
 
 ⚙️Схема БД
 
