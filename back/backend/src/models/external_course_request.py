@@ -7,7 +7,10 @@ from src.models.mixins import TimestampMixin, UUIDMixin
 
 class ExternalCourseRequest(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "external_course_requests"
-    __table_args__ = (Index("ix_external_requests_user_status", "requester_id", "status"),)
+    __table_args__ = (
+        Index("ix_external_requests_user_status", "requester_id", "status"),
+        Index("ix_external_requests_user_course_key", "requester_id", "course_key"),
+    )
 
     requester_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
     department_id: Mapped[str | None] = mapped_column(ForeignKey("departments.id"), nullable=True)
@@ -22,6 +25,7 @@ class ExternalCourseRequest(UUIDMixin, TimestampMixin, Base):
     requested_end_date: Mapped[str | None] = mapped_column(Date, nullable=True)
     estimated_duration_hours: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
     budget_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    course_key: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     status: Mapped[str] = mapped_column(String(30), default="draft")
     manager_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     hr_comment: Mapped[str | None] = mapped_column(Text, nullable=True)

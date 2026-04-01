@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_, select
 
@@ -6,6 +7,7 @@ from src.api.deps import get_current_user, require_roles
 from src.db.deps import DBSession
 from src.models.approval_step import ApprovalStep
 from src.models.course import Course
+from src.models.department import Department
 from src.models.enrollment import Enrollment
 from src.models.external_course_request import ExternalCourseRequest
 from src.models.user import User
@@ -15,6 +17,12 @@ from src.services.calendar_sync import create_internal_calendar_event_for_reques
 from src.services.notifications import push_notification
 
 router = APIRouter()
+
+ACTIVE_DUPLICATE_STATUSES = {
+    "pending_manager_approval",
+    "pending_hr_approval",
+    "approved",
+}
 
 
 def _resolve_hr_approver(db: DBSession, requester_department_id: str | None) -> User | None:
@@ -28,12 +36,49 @@ def _resolve_hr_approver(db: DBSession, requester_department_id: str | None) -> 
     return db.scalar(stmt.order_by(User.created_at.asc()))
 
 
+def _course_key(title: str, provider_url: str | None) -> str:
+    normalized_url = (provider_url or "").strip().lower()
+    normalized_title = title.strip().lower()
+    return f"{normalized_url}|{normalized_title}"
+
+
+def _request_to_out(db: DBSession, req: ExternalCourseRequest) -> ExternalRequestOut:
+    requester = db.get(User, req.requester_id)
+    department = db.get(Department, requester.department_id) if requester and requester.department_id else None
+    requester_name = None
+    if requester:
+        requester_name = " ".join(part for part in [requester.last_name, requester.first_name, requester.middle_name] if part)
+    return ExternalRequestOut(
+        id=req.id,
+        requester_id=req.requester_id,
+        title=req.title,
+        provider_name=req.provider_name,
+        provider_url=req.provider_url,
+        program_description=req.program_description,
+        justification=req.justification,
+        status=req.status,
+        cost_amount=float(req.cost_amount),
+        cost_currency=req.cost_currency,
+        requested_start_date=req.requested_start_date,
+        requested_end_date=req.requested_end_date,
+        estimated_duration_hours=float(req.estimated_duration_hours) if req.estimated_duration_hours is not None else None,
+        budget_code=req.budget_code,
+        manager_comment=req.manager_comment,
+        hr_comment=req.hr_comment,
+        requester_name=requester_name,
+        requester_email=requester.email if requester else None,
+        requester_department_name=department.name if department else None,
+        requester_team_name=requester.team_name if requester else None,
+        created_at=req.created_at,
+    )
+
+
 @router.get("/mine", response_model=list[ExternalRequestOut])
 def my_requests(db: DBSession, current_user: User = Depends(get_current_user)):
     stmt = select(ExternalCourseRequest).where(
         ExternalCourseRequest.requester_id == current_user.id
     ).order_by(ExternalCourseRequest.created_at.desc())
-    return list(db.scalars(stmt).all())
+    return [_request_to_out(db, item) for item in db.scalars(stmt).all()]
 
 
 @router.get("/details/{request_id}", response_model=ExternalRequestOut)
@@ -48,14 +93,26 @@ def get_request(request_id: str, db: DBSession, current_user: User = Depends(get
         requester = db.get(User, req.requester_id)
         if requester and requester.manager_id and requester.manager_id != current_user.id:
             raise HTTPException(status_code=403, detail="Forbidden")
-    return req
+    return _request_to_out(db, req)
 
 
 @router.post("/", response_model=ExternalRequestOut)
 def create_request(payload: ExternalRequestCreate, db: DBSession, current_user: User = Depends(get_current_user)):
+    duplicate_key = _course_key(payload.title, payload.provider_url)
+    existing = db.scalar(
+        select(ExternalCourseRequest).where(
+            ExternalCourseRequest.requester_id == current_user.id,
+            ExternalCourseRequest.course_key == duplicate_key,
+            ExternalCourseRequest.status.in_(ACTIVE_DUPLICATE_STATUSES),
+        ).order_by(ExternalCourseRequest.created_at.desc())
+    )
+    if existing:
+        return _request_to_out(db, existing)
+
     request = ExternalCourseRequest(
         requester_id=current_user.id,
         department_id=current_user.department_id,
+        course_key=duplicate_key,
         status="pending_manager_approval",
         outlook_conflict_status="unchecked",
         **payload.model_dump(),
@@ -75,7 +132,7 @@ def create_request(payload: ExternalRequestCreate, db: DBSession, current_user: 
     write_audit(db, current_user.id, "create", "external_course_request", request.id, None, {"status": request.status})
     db.commit()
     db.refresh(request)
-    return request
+    return _request_to_out(db, request)
 
 
 @router.get("/pending", response_model=list[ExternalRequestOut])
@@ -88,7 +145,7 @@ def pending_requests(db: DBSession, current_user: User = Depends(require_roles("
         )
     elif current_user.role == "hr":
         stmt = stmt.where(ExternalCourseRequest.status == "pending_hr_approval")
-    return list(db.scalars(stmt.order_by(ExternalCourseRequest.created_at.desc())).all())
+    return [_request_to_out(db, item) for item in db.scalars(stmt.order_by(ExternalCourseRequest.created_at.desc())).all()]
 
 
 @router.post("/{request_id}/manager-approve", response_model=ExternalRequestOut)
@@ -136,7 +193,7 @@ def manager_approve(request_id: str, payload: ExternalRequestDecisionIn, db: DBS
     write_audit(db, current_user.id, "manager_approve", "external_course_request", req.id, None, {"status": req.status})
     db.commit()
     db.refresh(req)
-    return req
+    return _request_to_out(db, req)
 
 
 @router.post("/{request_id}/manager-reject", response_model=ExternalRequestOut)
@@ -158,7 +215,7 @@ def manager_reject(request_id: str, payload: ExternalRequestDecisionIn, db: DBSe
     write_audit(db, current_user.id, "manager_reject", "external_course_request", req.id, None, {"status": req.status})
     db.commit()
     db.refresh(req)
-    return req
+    return _request_to_out(db, req)
 
 
 @router.post("/{request_id}/hr-approve", response_model=ExternalRequestOut)
@@ -174,6 +231,7 @@ def hr_approve(request_id: str, payload: ExternalRequestDecisionIn, db: DBSessio
         title=req.title,
         slug=f"external-{str(req.id)[:8]}",
         description=req.program_description,
+        summary=req.program_description,
         course_type="external",
         provider_name=req.provider_name,
         provider_url=req.provider_url,
@@ -183,6 +241,7 @@ def hr_approve(request_id: str, payload: ExternalRequestDecisionIn, db: DBSessio
         status="published",
         has_certificate=True,
         created_by=current_user.id,
+        duration_hours=req.estimated_duration_hours,
     )
     db.add(external_course)
     db.flush()
@@ -211,7 +270,7 @@ def hr_approve(request_id: str, payload: ExternalRequestDecisionIn, db: DBSessio
     )
     db.commit()
     db.refresh(req)
-    return req
+    return _request_to_out(db, req)
 
 
 @router.post("/{request_id}/hr-reject", response_model=ExternalRequestOut)
@@ -230,4 +289,4 @@ def hr_reject(request_id: str, payload: ExternalRequestDecisionIn, db: DBSession
     write_audit(db, current_user.id, "hr_reject", "external_course_request", req.id, None, {"status": req.status})
     db.commit()
     db.refresh(req)
-    return req
+    return _request_to_out(db, req)
