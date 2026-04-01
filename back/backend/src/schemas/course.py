@@ -61,6 +61,10 @@ class SmartCourseResult(BaseModel):
     price_amount: float | None = None
     price_currency: str | None = None
     freshness_label: str | None = None
+    difficulty: str | None = None
+    average_rating: float | None = None
+    ai_rating: float | None = None
+    ai_review: str | None = None
     score: float
     why_recommended: str
     course_id: UUID | None = None

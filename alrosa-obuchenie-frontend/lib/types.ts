@@ -18,7 +18,7 @@ export interface Course {
   duration_hours?: number | null; created_at: string;
 }
 export interface Enrollment { id: UUID; user_id: UUID; course_id: UUID; status: string; progress_percent: number; source: string; created_at: string; }
-export interface ExternalRequest { id: UUID; requester_id: UUID; title: string; provider_name: string; status: string; cost_amount: number; cost_currency: string; created_at: string; }
+export interface ExternalRequest { id: UUID; requester_id: UUID; title: string; provider_name: string; provider_url?: string | null; program_description?: string | null; justification: string; status: string; cost_amount: number; cost_currency: string; requested_start_date?: string | null; requested_end_date?: string | null; estimated_duration_hours?: number | null; budget_code?: string | null; manager_comment?: string | null; hr_comment?: string | null; requester_name?: string | null; requester_email?: string | null; requester_department_name?: string | null; requester_team_name?: string | null; created_at: string; }
 export interface Certificate { id: UUID; user_id: UUID; source: string; status: string; issue_date?: string | null; created_at: string; issuer_name?: string | null; certificate_number?: string | null; file_id?: string | null; file_name?: string | null; file_url?: string | null; }
 export interface Notification { id: UUID; type: string; title: string; body: string; is_read: boolean; created_at: string; }
 export interface Review { id: UUID; course_id: UUID; enrollment_id: UUID; rating: number; comment?: string | null; created_at: string; }
@@ -28,7 +28,7 @@ export interface CalendarEvent {
 export interface SmartCourseResult {
   source_type: string; title: string; provider_name: string; provider_url?: string | null; summary?: string | null; description?: string | null;
   level?: string | null; delivery_mode?: string | null; duration_hours?: number | null; price_amount?: number | null; price_currency?: string | null;
-  freshness_label?: string | null; score: number; why_recommended: string; course_id?: UUID | null; is_internal_priority: boolean; is_recommended?: boolean; tags: string[];
+  freshness_label?: string | null; difficulty?: string | null; average_rating?: number | null; ai_rating?: number | null; ai_review?: string | null; score: number; why_recommended: string; course_id?: UUID | null; is_internal_priority: boolean; is_recommended?: boolean; tags: string[];
 }
 export interface SmartSearchPayload { query: string; normalized_query: Record<string, unknown>; results: SmartCourseResult[]; }
 export interface HRExternalAssignPayload {

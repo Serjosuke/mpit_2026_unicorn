@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ClipboardCheck, Home, UserCircle2 } from "lucide-react";
+import { BookOpen, CheckSquare, LayoutDashboard, UserCircle2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const items = [
-  { href: "/dashboard", icon: Home, label: "Главная" },
-  { href: "/courses", icon: BookOpen, label: "Курсы" },
-  { href: "/my-learning", icon: ClipboardCheck, label: "Обучение" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Главная" },
+  { href: "/courses", icon: BookOpen, label: "Каталог" },
+  { href: "/my-learning", icon: CheckSquare, label: "Мои" },
   { href: "/profile", icon: UserCircle2, label: "Профиль" }
 ];
 
@@ -17,7 +17,7 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <div className="fixed inset-x-4 bottom-4 z-50 rounded-3xl border border-slate-200 bg-white/95 p-2 shadow-soft backdrop-blur lg:hidden">
+    <div className="fixed inset-x-4 bottom-4 z-50 rounded-[24px] border border-slate-200 bg-white/95 p-2 shadow-soft backdrop-blur lg:hidden">
       <div className="grid grid-cols-4 gap-1">
         {items.map((item) => {
           const Icon = item.icon;

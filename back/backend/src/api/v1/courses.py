@@ -112,6 +112,22 @@ def favorite_external_course(payload: FavoriteExternalCourseIn, db: DBSession, c
 
 
 def _create_external_assignment(payload: HRExternalAssignIn, employee: User, db: DBSession, current_user: User):
+    existing = db.scalar(
+        select(Enrollment)
+        .join(Course, Course.id == Enrollment.course_id)
+        .where(
+            Enrollment.user_id == employee.id,
+            Course.course_type == "external",
+            Course.title == payload.title,
+            Course.provider_url == payload.provider_url,
+            Enrollment.status.in_(["enrolled", "in_progress", "completed"]),
+        )
+        .order_by(Enrollment.created_at.desc())
+    )
+    if existing:
+        existing_course = db.get(Course, existing.course_id)
+        return existing_course, existing, None, True, "Курс уже был назначен этому сотруднику"
+
     slug = f"hr-external-{uuid4().hex[:10]}"
     course = Course(
         title=payload.title,
@@ -154,9 +170,11 @@ def assign_external_course(payload: HRExternalAssignIn, db: DBSession, current_u
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
     course, enrollment, event, reminder_only, reason = _create_external_assignment(payload, employee, db, current_user)
+    if not course or not enrollment:
+        raise HTTPException(status_code=400, detail="Не удалось назначить курс")
     db.commit()
     db.refresh(course)
-    return HRExternalAssignOut(course=course, enrollment_id=enrollment.id, calendar_event_id=event.id, conflict_handled_as_reminder=reminder_only, conflict_reason=reason)
+    return HRExternalAssignOut(course=course, enrollment_id=enrollment.id, calendar_event_id=event.id if event else enrollment.id, conflict_handled_as_reminder=reminder_only, conflict_reason=reason)
 
 
 @router.post("/assign-external-bulk", response_model=HRBulkExternalAssignOut)
@@ -169,7 +187,9 @@ def assign_external_course_bulk(payload: HRBulkExternalAssignIn, db: DBSession, 
         if not employee:
             continue
         item = HRExternalAssignIn(**payload.model_dump(exclude={"user_ids"}), employee_id=user_id)
-        course, _, _, reminder_only, _ = _create_external_assignment(item, employee, db, current_user)
+        course, enrollment, _, reminder_only, reason = _create_external_assignment(item, employee, db, current_user)
+        if not course or not enrollment or reason == "Курс уже был назначен этому сотруднику":
+            continue
         created += 1
         reminders += 1 if reminder_only else 0
         course_ids.append(course.id)
