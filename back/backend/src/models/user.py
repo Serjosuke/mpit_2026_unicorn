@@ -22,6 +22,8 @@ class User(UUIDMixin, TimestampMixin, Base):
     trainer_bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     outlook_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    position_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    team_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     department = relationship("Department", back_populates="users")

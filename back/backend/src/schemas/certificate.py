@@ -23,3 +23,8 @@ class CertificateOut(ORMModel):
     status: str
     issue_date: date | None = None
     created_at: datetime
+    issuer_name: str | None = None
+    certificate_number: str | None = None
+    file_id: UUID | None = None
+    file_name: str | None = None
+    file_url: str | None = None
