@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
 # mpit_2026_unicorn
 
 <h1 align="center">🦄 Unicorn</h1>
