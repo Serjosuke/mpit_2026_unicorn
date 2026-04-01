@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+<<<<<<< HEAD
 import { ArrowRight, BookmarkPlus, CheckCircle2, ExternalLink, Globe, Search, Send, Sparkles, Star, UserPlus, WandSparkles, X } from "lucide-react";
+=======
+import { BookmarkPlus, ExternalLink, Globe, Search, Send, Sparkles, Star, UserPlus, X } from "lucide-react";
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -13,7 +17,10 @@ import { StatusBadge } from "@/components/common/status-badge";
 import { useApp } from "@/components/providers/app-provider";
 import { api, ApiError } from "@/lib/api";
 import type { Course, Department, Enrollment, SmartCourseResult, User } from "@/lib/types";
+<<<<<<< HEAD
 import { formatDate } from "@/lib/utils";
+=======
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
 
 const tabs = [
   { key: "recommended", label: "Подобрано для меня" },
@@ -22,6 +29,7 @@ const tabs = [
   { key: "external", label: "Поиск внешних курсов" },
 ] as const;
 
+<<<<<<< HEAD
 const defaultRequest = {
   title: "",
   provider_name: "",
@@ -52,6 +60,8 @@ type RequestCandidate = {
   course_id?: string | null;
 };
 
+=======
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
 function scoreCourse(course: Course, roleText: string, load: number) {
   const text = `${course.title} ${course.summary || ""} ${course.description || ""} ${course.skill_tags || ""}`.toLowerCase();
   let score = 0;
@@ -71,6 +81,7 @@ function scoreCourse(course: Course, roleText: string, load: number) {
   return score + Math.max(0, 10 - (course.source_priority || 10));
 }
 
+<<<<<<< HEAD
 function addDays(base: Date, days: number) {
   const next = new Date(base);
   next.setDate(next.getDate() + days);
@@ -80,6 +91,21 @@ function addDays(base: Date, days: number) {
 function toInputDate(value: Date) {
   return value.toISOString().slice(0, 10);
 }
+=======
+const defaultRequest = {
+  title: "",
+  provider_name: "",
+  provider_url: "",
+  program_description: "",
+  justification: "Этот курс поможет мне решать рабочие задачи и развиваться по текущей роли.",
+  cost_amount: "0",
+  cost_currency: "RUB",
+  requested_start_date: "",
+  requested_end_date: "",
+  estimated_duration_hours: "",
+  budget_code: "",
+};
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
 
 export default function CoursesPage() {
   const searchParams = useSearchParams();
@@ -93,6 +119,7 @@ export default function CoursesPage() {
   const [searchQuery, setSearchQuery] = useState("react frontend");
   const [smartLoading, setSmartLoading] = useState(false);
   const [results, setResults] = useState<SmartCourseResult[]>([]);
+<<<<<<< HEAD
 
   const [requestCourse, setRequestCourse] = useState<RequestCandidate | null>(null);
   const [requestForm, setRequestForm] = useState(defaultRequest);
@@ -102,6 +129,13 @@ export default function CoursesPage() {
   const [assignSearch, setAssignSearch] = useState("");
   const [assignDepartmentFilter, setAssignDepartmentFilter] = useState("all");
   const [assignTeamFilter, setAssignTeamFilter] = useState<string>('');
+=======
+  const [requestCourse, setRequestCourse] = useState<SmartCourseResult | null>(null);
+  const [requestForm, setRequestForm] = useState(defaultRequest);
+  const [assignCourse, setAssignCourse] = useState<SmartCourseResult | null>(null);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
   const [dueDate, setDueDate] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
@@ -128,6 +162,7 @@ export default function CoursesPage() {
     }
   }
 
+<<<<<<< HEAD
   useEffect(() => {
     void loadBase();
   }, []);
@@ -198,12 +233,28 @@ export default function CoursesPage() {
     setDueDate("");
   }
 
+=======
+  useEffect(() => { void loadBase(); }, []);
+
+  const enrolledIds = new Set(enrollments.map((item) => item.course_id));
+  const roleText = `${user?.position_title || ""} ${user?.team_name || ""}`.toLowerCase();
+  const activeLoad = enrollments.filter((item) => item.status === "in_progress").length;
+
+  const recommended = useMemo(() => courses.filter((course) => !enrolledIds.has(course.id)).sort((a, b) => scoreCourse(b, roleText, activeLoad) - scoreCourse(a, roleText, activeLoad)), [courses, roleText, activeLoad]);
+  const hrRecommended = useMemo(() => courses.filter((course) => course.is_featured_internal), [courses]);
+  const internalCourses = useMemo(() => courses.filter((course) => course.course_type === "internal"), [courses]);
+
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
   async function runExternalSearch() {
     if (searchQuery.trim().length < 2) return;
     setSmartLoading(true);
     try {
       const payload = await api.externalSearchCourses(searchQuery);
+<<<<<<< HEAD
       setResults(payload.results.filter((item) => item.source_type !== "internal"));
+=======
+      setResults(payload.results);
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
       setTab("external");
     } catch (error) {
       toast.error(error instanceof ApiError ? error.detail : "Не удалось выполнить поиск");
@@ -212,6 +263,7 @@ export default function CoursesPage() {
     }
   }
 
+<<<<<<< HEAD
   async function startInternalCourse(course: Course) {
     setBusyKey(`enroll-${course.id}`);
     try {
@@ -225,6 +277,8 @@ export default function CoursesPage() {
     }
   }
 
+=======
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
   async function submitExternalRequest() {
     if (!requestCourse) return;
     setBusyKey(`request-${requestCourse.title}`);
@@ -247,13 +301,21 @@ export default function CoursesPage() {
     }
   }
 
+<<<<<<< HEAD
   async function publishRecommended(item: RequestCandidate) {
+=======
+  async function publishRecommended(item: SmartCourseResult) {
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
     setBusyKey(`favorite-${item.title}`);
     try {
       await api.favoriteExternalCourse({
         title: item.title,
         provider_name: item.provider_name,
+<<<<<<< HEAD
         provider_url: item.provider_url || "",
+=======
+        provider_url: item.provider_url,
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
         summary: item.summary,
         description: item.description,
         level: item.level,
@@ -263,7 +325,11 @@ export default function CoursesPage() {
         price_currency: item.price_currency,
         skill_tags: item.tags?.join(", ") || null,
       });
+<<<<<<< HEAD
       toast.success("Курс добавлен в список рекомендаций HR");
+=======
+      toast.success("Курс добавлен в общий список рекомендованных");
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
       await loadBase();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.detail : "Не удалось сохранить рекомендацию");
@@ -280,11 +346,19 @@ export default function CoursesPage() {
       pool.filter((candidate) => candidate.department_id === depId).forEach((candidate) => expandedIds.add(candidate.id));
     });
     if (expandedIds.size === 0) {
+<<<<<<< HEAD
       toast.error("Выберите хотя бы одного сотрудника или подразделение");
       return;
     }
     if (!dueDate) {
       toast.error("Укажите дедлайн");
+=======
+      toast.error("Выбери хотя бы одного сотрудника или подразделение");
+      return;
+    }
+    if (!dueDate) {
+      toast.error("Укажи дедлайн");
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
       return;
     }
     setBusyKey(`assign-${assignCourse.title}`);
@@ -293,7 +367,11 @@ export default function CoursesPage() {
         user_ids: Array.from(expandedIds),
         title: assignCourse.title,
         provider_name: assignCourse.provider_name,
+<<<<<<< HEAD
         provider_url: assignCourse.provider_url || "",
+=======
+        provider_url: assignCourse.provider_url,
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
         summary: assignCourse.summary,
         description: assignCourse.description,
         level: assignCourse.level,
@@ -303,7 +381,11 @@ export default function CoursesPage() {
         price_amount: assignCourse.price_amount,
         price_currency: assignCourse.price_currency || "RUB",
       });
+<<<<<<< HEAD
       toast.success("Внешний курс назначен сотрудникам");
+=======
+      toast.success("Внешний курс назначен и добавлен в обучение");
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
       setAssignCourse(null);
       setSelectedDepartmentIds([]);
       setSelectedEmployeeIds([]);
@@ -315,6 +397,7 @@ export default function CoursesPage() {
     }
   }
 
+<<<<<<< HEAD
   const candidateEmployees = useMemo(() => {
     const base = users.filter((candidate) => candidate.role === "employee");
     if (user && !base.find((candidate) => candidate.id === user.id)) return [user, ...base];
@@ -344,10 +427,36 @@ export default function CoursesPage() {
     const isStarted = !!enrollment && enrollment.status !== "completed";
     const isExternal = course.course_type === "external";
 
+=======
+  function openRequestModal(item: SmartCourseResult) {
+    setRequestCourse(item);
+    setRequestForm({
+      ...defaultRequest,
+      title: item.title,
+      provider_name: item.provider_name,
+      provider_url: item.provider_url || "",
+      program_description: item.description || item.summary || "",
+      cost_amount: item.price_amount ? String(item.price_amount) : "0",
+      cost_currency: item.price_currency || "RUB",
+      estimated_duration_hours: item.duration_hours ? String(item.duration_hours) : "",
+    });
+  }
+
+  const candidateEmployees = useMemo(() => {
+    const base = users.filter((candidate) => candidate.role === "employee");
+    if (user && !base.find((candidate) => candidate.id === user.id)) {
+      return [user, ...base];
+    }
+    return base;
+  }, [users, user]);
+
+  function CourseCard({ course, mode = "catalog" }: { course: Course; mode?: string }) {
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
     return (
       <article className="rounded-[22px] border border-slate-200 bg-white p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
+<<<<<<< HEAD
             <div className={`text-xs font-semibold uppercase tracking-wide ${isExternal ? "text-emerald-700" : "text-brand-700"}`}>
               {isExternal ? "Внешний курс" : "Внутренний курс"}
             </div>
@@ -358,10 +467,19 @@ export default function CoursesPage() {
 
         <p className="mt-3 text-sm text-slate-500">{course.summary || course.description || "Корпоративный курс в каталоге обучения."}</p>
 
+=======
+            <div className="text-xs font-semibold uppercase tracking-wide text-brand-700">{course.course_type === "internal" ? "Внутренний курс" : "Внешний / рекомендованный"}</div>
+            <h3 className="mt-2 text-lg font-semibold text-slate-900">{course.title}</h3>
+          </div>
+          <StatusBadge status={course.status} />
+        </div>
+        <p className="mt-3 text-sm text-slate-500">{course.summary || course.description || "Корпоративный курс в каталоге обучения."}</p>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
         <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
           {course.provider_name ? <span className="rounded-full bg-slate-100 px-3 py-1">{course.provider_name}</span> : null}
           {course.duration_hours ? <span className="rounded-full bg-slate-100 px-3 py-1">{course.duration_hours} ч</span> : null}
           {course.level ? <span className="rounded-full bg-slate-100 px-3 py-1">{course.level}</span> : null}
+<<<<<<< HEAD
           {typeof course.active_enrollments_count === "number" ? <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">Сейчас проходят: {course.active_enrollments_count}</span> : null}
           {typeof course.total_enrollments_count === "number" ? <span className="rounded-full bg-brand-50 px-3 py-1 text-brand-700">Записано: {course.total_enrollments_count}</span> : null}
           {mode === "recommended" ? <span className="rounded-full bg-brand-50 px-3 py-1 text-brand-700">Подобрано по роли и загрузке</span> : null}
@@ -398,14 +516,23 @@ export default function CoursesPage() {
 
           <Link href={`/courses/${course.id}`} className="btn-secondary">Подробнее</Link>
           {course.provider_url ? <a href={course.provider_url} target="_blank" rel="noreferrer" className="btn-secondary"><ExternalLink className="h-4 w-4" />Источник</a> : null}
+=======
+        </div>
+        <div className="mt-5 flex items-center justify-between">
+          <span className="text-sm text-slate-500">{mode === "recommended" ? "Подобрано по роли и загрузке" : "Доступно в каталоге"}</span>
+          <Link href={`/courses/${course.id}`} className="btn-primary">Открыть</Link>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
         </div>
       </article>
     );
   }
 
   function ExternalCard({ item }: { item: SmartCourseResult }) {
+<<<<<<< HEAD
     const existingEnrollment = item.course_id ? enrollmentMap.get(item.course_id) : undefined;
     const normalized = { ...item, source_type: item.source_type, course_id: item.course_id };
+=======
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
     return (
       <article className="rounded-[22px] border border-slate-200 bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -419,13 +546,17 @@ export default function CoursesPage() {
             <div className="text-xs text-slate-500">AI-оценка</div>
           </div>
         </div>
+<<<<<<< HEAD
 
+=======
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
         <p className="mt-3 text-sm text-slate-500">{item.ai_review || item.summary || item.description || "Внешний курс найден по запросу."}</p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
           {item.tags?.slice(0, 4).map((tag) => <span key={tag} className="rounded-full bg-slate-100 px-3 py-1">{tag}</span>)}
           {item.duration_hours ? <span className="rounded-full bg-slate-100 px-3 py-1">{item.duration_hours} ч</span> : null}
           {item.price_amount !== null && item.price_amount !== undefined ? <span className="rounded-full bg-slate-100 px-3 py-1">{item.price_amount} {item.price_currency || "RUB"}</span> : null}
         </div>
+<<<<<<< HEAD
 
         {existingEnrollment ? (
           <div className={`mt-4 rounded-[20px] p-4 text-sm ${existingEnrollment.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
@@ -438,6 +569,13 @@ export default function CoursesPage() {
           {isEmployee && !existingEnrollment ? <button className="btn-primary" onClick={() => openRequestModal(normalized)}><WandSparkles className="h-4 w-4" />Начать обучение</button> : null}
           {isHR ? <button className="btn-success" onClick={() => publishRecommended(normalized)} disabled={busyKey === `favorite-${item.title}`}><BookmarkPlus className="h-4 w-4" />В рекомендации HR</button> : null}
           {isHR ? <button className="btn-primary" onClick={() => openAssignModal(normalized)}><UserPlus className="h-4 w-4" />Назначить</button> : null}
+=======
+        <div className="mt-5 flex flex-wrap gap-3">
+          {item.provider_url ? <a href={item.provider_url} target="_blank" className="btn-secondary"><ExternalLink className="h-4 w-4" />Открыть источник</a> : null}
+          {isEmployee ? <button className="btn-primary" onClick={() => openRequestModal(item)}><Send className="h-4 w-4" />Запросить одобрение</button> : null}
+          {isHR ? <button className="btn-success" onClick={() => publishRecommended(item)} disabled={busyKey === `favorite-${item.title}`}><BookmarkPlus className="h-4 w-4" />В общий доступ</button> : null}
+          {isHR ? <button className="btn-primary" onClick={() => setAssignCourse(item)}><UserPlus className="h-4 w-4" />Назначить</button> : null}
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
         </div>
       </article>
     );
@@ -449,6 +587,7 @@ export default function CoursesPage() {
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="max-w-3xl">
             <h2 className="text-xl font-bold text-slate-900">Найди нужный формат обучения</h2>
+<<<<<<< HEAD
             <p className="mt-2 text-sm text-slate-500">В каталоге видно, курс уже проходит пользователь или уже завершил его. Для внешних программ доступно AI-предзаполнение заявки с возможностью ручной правки.</p>
           </div>
           <div className="flex w-full gap-3 xl:max-w-[520px]">
@@ -456,13 +595,24 @@ export default function CoursesPage() {
             <button className="btn-primary shrink-0" onClick={runExternalSearch} disabled={smartLoading}>
               {smartLoading ? "Поиск..." : <><Search className="h-4 w-4" />Поиск</>}
             </button>
+=======
+            <p className="mt-2 text-sm text-slate-500">Внешний поиск вынесен отдельно. Внутренние курсы, рекомендованные HR и твои курсы не смешиваются между собой.</p>
+          </div>
+          <div className="flex w-full gap-3 xl:max-w-[520px]">
+            <input className="input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Например: React, Java, DevOps, аналитика" />
+            <button className="btn-primary shrink-0" onClick={runExternalSearch} disabled={smartLoading}>{smartLoading ? "Поиск..." : <><Search className="h-4 w-4" />Поиск</>}</button>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
           </div>
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
           {tabs.map((item) => (
+<<<<<<< HEAD
             <button key={item.key} className={tab === item.key ? "btn-primary" : "btn-secondary"} onClick={() => setTab(item.key)}>
               {item.label}
             </button>
+=======
+            <button key={item.key} className={tab === item.key ? "btn-primary" : "btn-secondary"} onClick={() => setTab(item.key)}>{item.label}</button>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
           ))}
         </div>
       </div>
@@ -474,21 +624,33 @@ export default function CoursesPage() {
           {tab === "recommended" ? (
             <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
               {recommended.slice(0, 12).map((course) => <CourseCard key={course.id} course={course} mode="recommended" />)}
+<<<<<<< HEAD
               {recommended.length === 0 ? <EmptyState title="Нет доступных рекомендаций" description="Подходящие курсы появятся здесь автоматически." /> : null}
+=======
+              {recommended.length === 0 ? <EmptyState title="Нет доступных рекомендаций" description="Все подходящие курсы уже назначены или пройдены." /> : null}
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
             </div>
           ) : null}
 
           {tab === "hr" ? (
             <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
               {hrRecommended.map((course) => <CourseCard key={course.id} course={course} />)}
+<<<<<<< HEAD
               {hrRecommended.length === 0 ? <EmptyState title="HR-подборка пока пуста" description="HR сможет публиковать сюда лучшие внешние и внутренние программы." /> : null}
+=======
+              {hrRecommended.length === 0 ? <EmptyState title="HR-подборка пока пуста" description="HR может добавлять внешние курсы в общий список рекомендаций прямо из внешнего поиска." /> : null}
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
             </div>
           ) : null}
 
           {tab === "internal" ? (
             <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
               {internalCourses.map((course) => <CourseCard key={course.id} course={course} />)}
+<<<<<<< HEAD
               {internalCourses.length === 0 ? <EmptyState title="Внутренние курсы пока не опубликованы" description="После публикации программы появятся здесь." /> : null}
+=======
+              {internalCourses.length === 0 ? <EmptyState title="Внутренние курсы пока не опубликованы" description="После публикации они появятся здесь отдельным блоком." /> : null}
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
             </div>
           ) : null}
 
@@ -496,7 +658,11 @@ export default function CoursesPage() {
             <div className="space-y-5">
               <div className="card card-pad">
                 <div className="flex items-center gap-2 text-slate-900"><Globe className="h-5 w-5 text-brand-700" /><h3 className="text-lg font-bold">Внешние курсы по запросу</h3></div>
+<<<<<<< HEAD
                 <p className="mt-2 text-sm text-slate-500">Найденные варианты можно отправить на одобрение с AI-предзаполнением или назначить сотрудникам через HR.</p>
+=======
+                <p className="mt-2 text-sm text-slate-500">Здесь только внешние курсы. Внутренний каталог и уже рекомендованные курсы сюда не подмешиваются.</p>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 {results.map((item) => <ExternalCard key={`${item.provider_name}-${item.title}`} item={item} />)}
@@ -512,6 +678,7 @@ export default function CoursesPage() {
           <div className="card max-h-[92vh] w-full max-w-3xl overflow-y-auto card-pad fade-up">
             <div className="flex items-start justify-between gap-4">
               <div>
+<<<<<<< HEAD
                 <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700"><WandSparkles className="h-3.5 w-3.5" />AI-предзаполнение заявки</div>
                 <h3 className="mt-3 text-2xl font-bold text-slate-900">{requestCourse.title}</h3>
                 <p className="mt-2 text-sm text-slate-500">Черновик уже заполнен автоматически. Можно скорректировать любой параметр перед отправкой.</p>
@@ -523,6 +690,14 @@ export default function CoursesPage() {
               AI предложил даты, длительность, бюджетный код и обоснование на основе роли пользователя и описания курса.
             </div>
 
+=======
+                <div className="text-xs font-semibold uppercase tracking-wide text-brand-700">Заявка на внешний курс</div>
+                <h3 className="mt-1 text-2xl font-bold text-slate-900">{requestCourse.title}</h3>
+                <p className="mt-2 text-sm text-slate-500">Сотрудник отправляет ссылку и обоснование, зачем этот курс нужен для работы.</p>
+              </div>
+              <button className="btn-secondary" onClick={() => setRequestCourse(null)}><X className="h-4 w-4" /></button>
+            </div>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div><label className="label">Название курса</label><input className="input" value={requestForm.title} onChange={(e) => setRequestForm((s) => ({ ...s, title: e.target.value }))} /></div>
               <div><label className="label">Провайдер</label><input className="input" value={requestForm.provider_name} onChange={(e) => setRequestForm((s) => ({ ...s, provider_name: e.target.value }))} /></div>
@@ -536,7 +711,10 @@ export default function CoursesPage() {
               <div><label className="label">Часы</label><input className="input" type="number" min="0" value={requestForm.estimated_duration_hours} onChange={(e) => setRequestForm((s) => ({ ...s, estimated_duration_hours: e.target.value }))} /></div>
               <div><label className="label">Код бюджета</label><input className="input" value={requestForm.budget_code} onChange={(e) => setRequestForm((s) => ({ ...s, budget_code: e.target.value }))} /></div>
             </div>
+<<<<<<< HEAD
 
+=======
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button className="btn-secondary" onClick={() => setRequestCourse(null)}>Отмена</button>
               <button className="btn-primary" onClick={submitExternalRequest} disabled={busyKey === `request-${requestCourse.title}`}><Send className="h-4 w-4" />Отправить на одобрение</button>
@@ -552,16 +730,25 @@ export default function CoursesPage() {
               <div>
                 <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">HR / L&D действие</div>
                 <h3 className="mt-1 text-2xl font-bold text-slate-900">{assignCourse.title}</h3>
+<<<<<<< HEAD
                 <p className="mt-2 text-sm text-slate-500">Можно назначить курс сотрудникам или подразделению, а также опубликовать его в HR-рекомендациях.</p>
+=======
+                <p className="mt-2 text-sm text-slate-500">Можно назначить курс конкретным сотрудникам, подразделению или себе, а также предварительно выложить его в общий список рекомендаций.</p>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
               </div>
               <button className="btn-secondary" onClick={() => setAssignCourse(null)}><X className="h-4 w-4" /></button>
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
+<<<<<<< HEAD
               <button className="btn-success" onClick={() => publishRecommended(assignCourse)}><Star className="h-4 w-4" />Добавить в HR-рекомендации</button>
+=======
+              <button className="btn-success" onClick={() => publishRecommended(assignCourse)}><Star className="h-4 w-4" />Выложить как рекомендованный</button>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
             </div>
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
               <div>
                 <label className="label">Кому назначить персонально</label>
+<<<<<<< HEAD
                 <div className="rounded-[20px] border border-slate-200 p-4">
                   <div className="grid gap-3 md:grid-cols-3">
                     <input className="input md:col-span-2" value={assignSearch} onChange={(e) => setAssignSearch(e.target.value)} placeholder="Поиск по имени, email, должности, команде" />
@@ -593,6 +780,15 @@ export default function CoursesPage() {
                     ))}
                   </div>
                   {filteredEmployees.length === 0 ? <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">По фильтрам никто не найден.</div> : null}
+=======
+                <div className="grid gap-2 rounded-[20px] border border-slate-200 p-4">
+                  {candidateEmployees.map((candidate) => (
+                    <label key={candidate.id} className="flex items-center gap-3 text-sm text-slate-700">
+                      <input type="checkbox" checked={selectedEmployeeIds.includes(candidate.id)} onChange={() => setSelectedEmployeeIds((state) => state.includes(candidate.id) ? state.filter((id) => id !== candidate.id) : [...state, candidate.id])} />
+                      <span>{candidate.first_name} {candidate.last_name} {candidate.id === user?.id ? "(я)" : ""}</span>
+                    </label>
+                  ))}
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
                 </div>
               </div>
               <div>

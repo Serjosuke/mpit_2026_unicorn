@@ -10,7 +10,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { StatusBadge } from "@/components/common/status-badge";
 import { api, ApiError } from "@/lib/api";
 import type { Course, CourseTrack, Enrollment, Review } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
 
 export default function CourseDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -64,6 +64,23 @@ export default function CourseDetailsPage() {
       toast.success("Вы записаны на курс");
     } catch (error) {
       toast.error(error instanceof ApiError ? error.detail : "Не удалось записаться");
+<<<<<<< HEAD
+=======
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function completeLesson(lessonId: string) {
+    if (!track?.enrollment_id) return;
+    setBusy(true);
+    try {
+      await api.completeLesson(track.enrollment_id, lessonId);
+      await load();
+      toast.success("Урок отмечен как выполненный");
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.detail : "Не удалось обновить прогресс");
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
     } finally {
       setBusy(false);
     }
@@ -74,6 +91,7 @@ export default function CourseDetailsPage() {
   }
 
   return (
+<<<<<<< HEAD
     <AppShell
       title={course.title}
       subtitle={course.course_type === "internal"
@@ -82,6 +100,11 @@ export default function CourseDetailsPage() {
     >
       <div className="mb-4">
         <Link href="/courses" className="btn-secondary"><ArrowLeft className="h-4 w-4" />Назад в каталог</Link>
+=======
+    <AppShell title={course.title} subtitle={course.course_type === "internal" ? "Внутренний курс с этапами, прогрессом и дедлайнами." : "Страница внешнего курса с таймингами, статусом и переходом на источник."}>
+      <div className="mb-4">
+        <Link href="/my-learning" className="btn-secondary"><ArrowLeft className="h-4 w-4" />Назад к моим курсам</Link>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
@@ -89,6 +112,7 @@ export default function CourseDetailsPage() {
           <div className="card card-pad">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
+<<<<<<< HEAD
                 <div className={`text-xs font-semibold uppercase tracking-wide ${course.course_type === "external" ? "text-emerald-700" : "text-brand-700"}`}>
                   {course.course_type === "internal" ? "Внутренний курс" : "Внешний курс"}
                 </div>
@@ -151,6 +175,71 @@ export default function CourseDetailsPage() {
                 <div className="panel-muted p-4"><div className="text-sm text-slate-500">Источник</div><div className="mt-1 text-base font-semibold text-slate-900">{course.provider_name || "Внешний провайдер"}</div></div>
                 <div className="panel-muted p-4"><div className="text-sm text-slate-500">Назначение</div><div className="mt-1 text-base font-semibold text-slate-900">Подробнее и прогресс доступны в «Моих курсах»</div></div>
               </div>
+=======
+                <div className="text-xs font-semibold uppercase tracking-wide text-brand-700">{course.course_type === "internal" ? "Внутренний курс" : "Внешний курс"}</div>
+                <h2 className="mt-2 text-3xl font-bold text-slate-900">{course.title}</h2>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">{course.summary || course.description || "Описание курса."}</p>
+              </div>
+              <StatusBadge status={course.status} />
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-500">
+              {course.provider_name ? <span className="rounded-full bg-slate-100 px-3 py-1">{course.provider_name}</span> : null}
+              {course.level ? <span className="rounded-full bg-slate-100 px-3 py-1">Уровень: {course.level}</span> : null}
+              {course.delivery_mode ? <span className="rounded-full bg-slate-100 px-3 py-1">Формат: {course.delivery_mode}</span> : null}
+              {course.duration_hours ? <span className="rounded-full bg-slate-100 px-3 py-1">{course.duration_hours} ч</span> : null}
+            </div>
+            {course.provider_url ? <a href={course.provider_url} target="_blank" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-brand-700 hover:underline"><ExternalLink className="h-4 w-4" />Открыть страницу курса</a> : null}
+          </div>
+
+          {track ? (
+            <div className="card card-pad">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="panel-muted p-4"><div className="text-sm text-slate-500">Прогресс</div><div className="mt-1 text-3xl font-bold text-slate-900">{track.progress_percent}%</div></div>
+                <div className="panel-muted p-4"><div className="text-sm text-slate-500">Активные уроки</div><div className="mt-1 text-3xl font-bold text-slate-900">{track.active_lessons}</div></div>
+                <div className="panel-muted p-4"><div className="text-sm text-slate-500">Просроченные</div><div className="mt-1 text-3xl font-bold text-rose-600">{track.overdue_lessons}</div></div>
+              </div>
+              <div className="mt-4 h-3 rounded-full bg-slate-200"><div className="h-full rounded-full bg-brand-700" style={{ width: `${Math.max(track.progress_percent, 4)}%` }} /></div>
+            </div>
+          ) : null}
+
+          {course.course_type === "internal" && track ? (
+            <div className="space-y-4">
+              {track.modules.map((module) => (
+                <div key={module.id} className="card card-pad">
+                  <h3 className="text-xl font-bold text-slate-900">{module.order_index}. {module.title}</h3>
+                  <p className="mt-2 text-sm text-slate-500">{module.description || "Практический модуль курса."}</p>
+                  <div className="mt-5 space-y-3">
+                    {module.lessons.map((lesson) => (
+                      <div key={lesson.id} className={`rounded-[20px] border p-4 ${deadlineStyles[lesson.deadline_status] || deadlineStyles.normal}`}>
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <div className="font-semibold text-slate-900">{lesson.order_index}. {lesson.title}</div>
+                            <div className="mt-1 text-sm text-slate-600">{lesson.content}</div>
+                            <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
+                              <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" />{lesson.estimated_minutes || 20} мин</span>
+                              <span>Дедлайн: {lesson.due_at ? formatDateTime(lesson.due_at) : "—"}</span>
+                            </div>
+                          </div>
+                          <button className={lesson.is_completed ? "btn-secondary" : "btn-primary"} disabled={busy || lesson.is_completed} onClick={() => completeLesson(lesson.id)}>
+                            {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : lesson.is_completed ? "Выполнено" : "Отметить готово"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="card card-pad">
+              <h3 className="text-xl font-bold text-slate-900">Тайминги и условия</h3>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="panel-muted p-4"><div className="text-sm text-slate-500">Формат</div><div className="mt-1 text-base font-semibold text-slate-900">{course.delivery_mode || "Онлайн"}</div></div>
+                <div className="panel-muted p-4"><div className="text-sm text-slate-500">Длительность</div><div className="mt-1 text-base font-semibold text-slate-900">{course.duration_hours ? `${course.duration_hours} часов` : "Нужно уточнить"}</div></div>
+                <div className="panel-muted p-4"><div className="text-sm text-slate-500">Дата добавления</div><div className="mt-1 text-base font-semibold text-slate-900">{formatDate(course.created_at)}</div></div>
+                <div className="panel-muted p-4"><div className="text-sm text-slate-500">Переход</div><div className="mt-1 text-base font-semibold text-slate-900">По внешней ссылке</div></div>
+              </div>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
             </div>
           )}
         </section>
@@ -159,6 +248,7 @@ export default function CourseDetailsPage() {
           <section className="card card-pad">
             <h3 className="text-lg font-bold text-slate-900">Действия</h3>
             <div className="mt-4 space-y-3">
+<<<<<<< HEAD
               {myEnrollment ? (
                 <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
                   Курс уже находится в вашем обучении. Статус: <span className="font-semibold">{myEnrollment.status}</span>
@@ -181,6 +271,11 @@ export default function CourseDetailsPage() {
                   <ExternalLink className="h-4 w-4" />Открыть внешний курс
                 </a>
               ) : null}
+=======
+              {myEnrollment ? <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">Курс уже находится в твоем обучении. Статус: <span className="font-semibold">{myEnrollment.status}</span></div> : null}
+              <button className="btn-primary h-12 w-full" onClick={handleEnroll} disabled={busy}>{busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : course.course_type === "internal" ? "Записаться на курс" : "Перейти к внешнему поиску"}</button>
+              {course.provider_url ? <a href={course.provider_url} target="_blank" className="btn-secondary h-12 w-full"><ExternalLink className="h-4 w-4" />Открыть внешний курс</a> : null}
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
             </div>
           </section>
 
@@ -197,9 +292,13 @@ export default function CourseDetailsPage() {
           </section>
 
           <section className="card card-pad">
+<<<<<<< HEAD
             <div className="rounded-[20px] bg-brand-50 p-4 text-sm text-brand-700">
               Важно: карточка курса в каталоге и карточка курса в «Моих курсах» разделены. Управление прогрессом, выполнение уроков и завершение курса доступны только внутри вашего трека обучения.
             </div>
+=======
+            <div className="flex items-start gap-3 rounded-[20px] bg-brand-50 p-4 text-brand-700"><CheckCircle2 className="mt-0.5 h-5 w-5" /><p className="text-sm">Внутренние курсы проходятся прямо в системе. Для внешних курсов эта страница показывает тайминги, статус и ссылку на внешний источник.</p></div>
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
           </section>
         </aside>
       </div>

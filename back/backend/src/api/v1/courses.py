@@ -169,6 +169,7 @@ def favorite_external_course(payload: FavoriteExternalCourseIn, db: DBSession, c
 
 
 def _create_external_assignment(payload: HRExternalAssignIn, employee: User, db: DBSession, current_user: User):
+<<<<<<< HEAD
     shared_course = db.scalar(
         select(Course)
         .where(
@@ -216,11 +217,22 @@ def _create_external_assignment(payload: HRExternalAssignIn, employee: User, db:
         .where(
             Enrollment.user_id == employee.id,
             Enrollment.course_id == shared_course.id,
+=======
+    existing = db.scalar(
+        select(Enrollment)
+        .join(Course, Course.id == Enrollment.course_id)
+        .where(
+            Enrollment.user_id == employee.id,
+            Course.course_type == "external",
+            Course.title == payload.title,
+            Course.provider_url == payload.provider_url,
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
             Enrollment.status.in_(["enrolled", "in_progress", "completed"]),
         )
         .order_by(Enrollment.created_at.desc())
     )
     if existing:
+<<<<<<< HEAD
         return shared_course, existing, None, True, "Курс уже был назначен этому сотруднику"
 
     enrollment = Enrollment(
@@ -230,6 +242,31 @@ def _create_external_assignment(payload: HRExternalAssignIn, employee: User, db:
         started_at=datetime.now(timezone.utc),
         source="hr_assigned_external",
         target_completion_date=payload.due_date,
+=======
+        existing_course = db.get(Course, existing.course_id)
+        return existing_course, existing, None, True, "Курс уже был назначен этому сотруднику"
+
+    slug = f"hr-external-{uuid4().hex[:10]}"
+    course = Course(
+        title=payload.title,
+        slug=slug,
+        description=payload.description or payload.summary,
+        summary=payload.summary,
+        skill_tags=None,
+        level=payload.level,
+        delivery_mode=payload.delivery_mode,
+        source_priority=payload.source_priority,
+        course_type="external",
+        provider_name=payload.provider_name,
+        provider_url=payload.provider_url,
+        created_by=current_user.id,
+        duration_hours=payload.duration_hours,
+        price_amount=payload.price_amount,
+        price_currency=payload.price_currency,
+        requires_approval=False,
+        status="published",
+        has_certificate=True,
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
     )
     db.add(enrollment)
     db.flush()
@@ -253,6 +290,7 @@ def assign_external_course(payload: HRExternalAssignIn, db: DBSession, current_u
         raise HTTPException(status_code=400, detail="Не удалось назначить курс")
     db.commit()
     db.refresh(course)
+<<<<<<< HEAD
     return HRExternalAssignOut(
         course=_serialize_course(db, course),
         enrollment_id=enrollment.id,
@@ -260,6 +298,9 @@ def assign_external_course(payload: HRExternalAssignIn, db: DBSession, current_u
         conflict_handled_as_reminder=reminder_only,
         conflict_reason=reason,
     )
+=======
+    return HRExternalAssignOut(course=course, enrollment_id=enrollment.id, calendar_event_id=event.id if event else enrollment.id, conflict_handled_as_reminder=reminder_only, conflict_reason=reason)
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
 
 
 @router.post("/assign-external-bulk", response_model=HRBulkExternalAssignOut)

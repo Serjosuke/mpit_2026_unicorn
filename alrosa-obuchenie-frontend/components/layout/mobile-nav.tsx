@@ -2,11 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+<<<<<<< HEAD
 import { BookOpen, CheckSquare, LayoutDashboard, ShieldCheck, UserCircle2, Wrench } from "lucide-react";
+=======
+import { BookOpen, CheckSquare, LayoutDashboard, UserCircle2 } from "lucide-react";
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
 
 import { useApp } from "@/components/providers/app-provider";
 import { cn } from "@/lib/utils";
 
+<<<<<<< HEAD
+=======
+const items = [
+  { href: "/dashboard", icon: LayoutDashboard, label: "Главная" },
+  { href: "/courses", icon: BookOpen, label: "Каталог" },
+  { href: "/my-learning", icon: CheckSquare, label: "Мои" },
+  { href: "/profile", icon: UserCircle2, label: "Профиль" }
+];
+
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
 export function MobileNav() {
   const pathname = usePathname();
   const { user } = useApp();
@@ -23,8 +37,13 @@ export function MobileNav() {
   ];
 
   return (
+<<<<<<< HEAD
     <div className="fixed inset-x-3 bottom-3 z-50 rounded-[24px] border border-slate-200 bg-white/95 p-2 shadow-soft backdrop-blur lg:hidden">
       <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+=======
+    <div className="fixed inset-x-4 bottom-4 z-50 rounded-[24px] border border-slate-200 bg-white/95 p-2 shadow-soft backdrop-blur lg:hidden">
+      <div className="grid grid-cols-4 gap-1">
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
         {items.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);

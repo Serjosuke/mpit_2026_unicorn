@@ -71,7 +71,10 @@ export default function DashboardPage() {
   if (loading) return <AppShell title="Главная" subtitle="Загрузка персональной панели"><PageLoader /></AppShell>;
 
   const isHR = user?.role === "hr" || user?.role === "admin";
+<<<<<<< HEAD
   const isManager = user?.role === "manager";
+=======
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
 
   return (
     <AppShell title={isHR ? "Рабочее место HR / L&D" : "Dashboard"} >
@@ -160,8 +163,11 @@ export default function DashboardPage() {
             <div className="mt-4 grid gap-3">
               <Link href="/my-learning" className="panel-muted flex items-center justify-between p-4 text-sm font-medium text-slate-700">Мои курсы <ArrowRight className="h-4 w-4" /></Link>
               <Link href="/courses?tab=external" className="panel-muted flex items-center justify-between p-4 text-sm font-medium text-slate-700">Поиск внешних курсов <ArrowRight className="h-4 w-4" /></Link>
+<<<<<<< HEAD
               {(user?.role === "hr" || user?.role === "admin" || user?.role === "manager") ? <Link href="/hr-dashboard" className="panel-muted flex items-center justify-between p-4 text-sm font-medium text-slate-700">Перейти в HR-монитор <ArrowRight className="h-4 w-4" /></Link> : null}
               {isManager ? <Link href="/course-builder" className="panel-muted flex items-center justify-between p-4 text-sm font-medium text-slate-700">Конструктор курса <ArrowRight className="h-4 w-4" /></Link> : null}
+=======
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
               {isHR ? <Link href="/approvals" className="panel-muted flex items-center justify-between p-4 text-sm font-medium text-slate-700">Очередь согласований <ArrowRight className="h-4 w-4" /></Link> : null}
             </div>
           </section>

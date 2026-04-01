@@ -12,9 +12,15 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.10.5",
     "lucide-react": "^0.511.0",
+<<<<<<< HEAD
     "next": "^13.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+=======
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+>>>>>>> d839566c6f869da06a6c368782231753931b1123
     "sonner": "^2.0.3"
   },
   "devDependencies": {
