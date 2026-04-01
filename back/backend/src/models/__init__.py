@@ -16,3 +16,4 @@ from .review import Review
 from .notification import Notification
 from .audit_log import AuditLog
 from .user_outlook_token import UserOutlookToken
+from .calendar_event import CalendarEvent

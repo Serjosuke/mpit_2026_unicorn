@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.router import api_router
 from src.core.config import settings
-from src.db.session import SessionLocal
+from src.db.session import SessionLocal, engine
 from src.db.seed import seed_initial_data
+from src.db.base import Base
+import src.models  # noqa: F401
 
 app = FastAPI(title=settings.app_name)
 
@@ -19,6 +21,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup() -> None:
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         seed_initial_data(db)
