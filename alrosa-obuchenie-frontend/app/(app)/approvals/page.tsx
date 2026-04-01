@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/common/status-badge";
 import { useApp } from "@/components/providers/app-provider";
 import { api, ApiError } from "@/lib/api";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import type { Course, ExternalRequest } from "@/lib/types";
 import { formatDate, requestStatusLabel } from "@/lib/utils";
 
@@ -21,6 +22,12 @@ import type { ExternalRequest } from "@/lib/types";
 import { formatDate, requestStatusLabel } from "@/lib/utils";
 
 export default function ApprovalsPage() {
+=======
+import type { ExternalRequest } from "@/lib/types";
+import { formatDate, requestStatusLabel } from "@/lib/utils";
+
+export default function ApprovalsPage() {
+>>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
   const [items, setItems] = useState<ExternalRequest[]>([]);
 >>>>>>> d839566c6f869da06a6c368782231753931b1123
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -33,6 +40,7 @@ export default function ApprovalsPage() {
     setLoading(true);
     try {
 <<<<<<< HEAD
+<<<<<<< HEAD
       const [requests, courses] = await Promise.all([
         api.pendingExternalRequests(),
         isHR ? api.listCourses() : Promise.resolve([] as Course[]),
@@ -43,6 +51,10 @@ export default function ApprovalsPage() {
       const data = await api.pendingExternalRequests();
       setItems(data.filter((item) => item.status === "pending_manager_approval" || item.status === "pending_hr_approval"));
 >>>>>>> d839566c6f869da06a6c368782231753931b1123
+=======
+      const data = await api.pendingExternalRequests();
+      setItems(data.filter((item) => item.status === "pending_manager_approval" || item.status === "pending_hr_approval"));
+>>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
     } catch (error) {
       const message = error instanceof ApiError ? error.detail : "Не удалось загрузить согласования";
       toast.error(message);
@@ -54,10 +66,14 @@ export default function ApprovalsPage() {
   useEffect(() => { void load(); }, []);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   async function actRequest(kind: "approve" | "reject", id: string, status: string) {
 =======
   async function act(kind: "approve" | "reject", id: string, status: string) {
 >>>>>>> d839566c6f869da06a6c368782231753931b1123
+=======
+  async function act(kind: "approve" | "reject", id: string, status: string) {
+>>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
     setBusyId(id + kind);
     try {
       if (status === "pending_manager_approval") {
@@ -73,6 +89,7 @@ export default function ApprovalsPage() {
       toast.success(kind === "approve" ? "Заявка согласована" : "Заявка отклонена");
       await load();
     } catch (error) {
+<<<<<<< HEAD
 <<<<<<< HEAD
       toast.error(error instanceof ApiError ? error.detail : "Не удалось обработать заявку");
     } finally {
@@ -93,12 +110,17 @@ export default function ApprovalsPage() {
       const message = error instanceof ApiError ? error.detail : "Не удалось обработать заявку";
       toast.error(message);
 >>>>>>> d839566c6f869da06a6c368782231753931b1123
+=======
+      const message = error instanceof ApiError ? error.detail : "Не удалось обработать заявку";
+      toast.error(message);
+>>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
     } finally {
       setBusyId(null);
     }
   }
 
   return (
+<<<<<<< HEAD
 <<<<<<< HEAD
     <AppShell title="Согласования" subtitle="Здесь собираются заявки сотрудников и внутренние курсы, которые менеджеры отправили HR на подтверждение.">
       <div className="card card-pad">
@@ -110,6 +132,8 @@ export default function ApprovalsPage() {
 
       <div className="mt-6 space-y-4">
 =======
+=======
+>>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
     <AppShell title="Согласования" subtitle="HR видит ссылку на курс, автора заявки, даты, стоимость и цель прохождения.">
       <div className="space-y-4">
 >>>>>>> d839566c6f869da06a6c368782231753931b1123
@@ -198,7 +222,10 @@ export default function ApprovalsPage() {
                 <div className="flex flex-wrap gap-3">
                   <button className="btn-primary" onClick={() => act("approve", item.id, item.status)} disabled={busyId === item.id + "approve"}>{busyId === item.id + "approve" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <><Check className="mr-2 h-4 w-4" />Согласовать</>}</button>
                   <button className="btn-danger" onClick={() => act("reject", item.id, item.status)} disabled={busyId === item.id + "reject"}>{busyId === item.id + "reject" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <><X className="mr-2 h-4 w-4" />Отклонить</>}</button>
+<<<<<<< HEAD
 >>>>>>> d839566c6f869da06a6c368782231753931b1123
+=======
+>>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
                 </div>
               </div>
             ))

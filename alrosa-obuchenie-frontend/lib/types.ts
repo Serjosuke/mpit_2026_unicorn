@@ -22,7 +22,10 @@ export interface Course {
 export interface Enrollment { id: UUID; user_id: UUID; course_id: UUID; status: string; progress_percent: number; source?: string | null; created_at: string; updated_at?: string | null; started_at?: string | null; completed_at?: string | null; target_completion_date?: string | null; }
 =======
 export interface Enrollment { id: UUID; user_id: UUID; course_id: UUID; status: string; progress_percent: number; source: string; created_at: string; }
+<<<<<<< HEAD
 >>>>>>> d839566c6f869da06a6c368782231753931b1123
+=======
+>>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
 export interface ExternalRequest { id: UUID; requester_id: UUID; title: string; provider_name: string; provider_url?: string | null; program_description?: string | null; justification: string; status: string; cost_amount: number; cost_currency: string; requested_start_date?: string | null; requested_end_date?: string | null; estimated_duration_hours?: number | null; budget_code?: string | null; manager_comment?: string | null; hr_comment?: string | null; requester_name?: string | null; requester_email?: string | null; requester_department_name?: string | null; requester_team_name?: string | null; created_at: string; }
 export interface Certificate { id: UUID; user_id: UUID; source: string; status: string; issue_date?: string | null; created_at: string; issuer_name?: string | null; certificate_number?: string | null; file_id?: string | null; file_name?: string | null; file_url?: string | null; }
 export interface Notification { id: UUID; type: string; title: string; body: string; is_read: boolean; created_at: string; }

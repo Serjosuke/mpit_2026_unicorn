@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
 # mpit_2026_unicorn
 
 <h1 align="center">🦄 Unicorn</h1>
@@ -206,7 +209,7 @@
 
 ---
 
-<p align="center"> <b>Сделано с ❤️ командой Unicorn</b><br> 🦄 2025 | VK-Tracker </p> 
+<p align="center"> <b>Сделано с ❤️ командой Unicorn</b><br> 🦄 2026 </p> 
 
 ⚙️Схема БД
 
@@ -294,6 +297,7 @@ erDiagram
         timestamp created_at
     }
 ```
+<<<<<<< HEAD
 =======
 # Alrosa LearnFlow
 
@@ -307,3 +311,5 @@ Patched project with real Microsoft Graph / Outlook Calendar integration, two-st
 - Employees can submit external courses for approval with justification.
 - Recommended HR favorites are pushed to the top of results; internal courses remain highest-priority in schedule conflicts.
 >>>>>>> full_test
+=======
+>>>>>>> 8d25defbe30f6077bce6537b18d14c5008e686a2
