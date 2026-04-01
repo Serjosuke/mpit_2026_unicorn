@@ -8,7 +8,7 @@ from src.db.deps import DBSession
 from src.models.user import User
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_v1_prefix}/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
 def get_current_user(db: DBSession, token: str = Depends(oauth2_scheme)) -> User:

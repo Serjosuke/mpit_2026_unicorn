@@ -1,366 +1,240 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, LoaderCircle, PlusCircle, Star } from "lucide-react";
+import { ArrowRight, Award, Clock3, ExternalLink, PlusCircle, Target } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { EmptyState } from "@/components/common/empty-state";
+import { PageLoader } from "@/components/common/page-loader";
 import { StatusBadge } from "@/components/common/status-badge";
 import { api, ApiError } from "@/lib/api";
 import type { Course, Enrollment, ExternalRequest } from "@/lib/types";
+import { formatDate, formatDateTime } from "@/lib/utils";
 
-const tabs: { id: "internal" | "external"; label: string }[] = [
-  { id: "internal", label: "Внутренние курсы" },
-  { id: "external", label: "Внешние заявки" }
-];
+type LearningItem = { enrollment: Enrollment; course?: Course };
+
+const tabs = [
+  { key: "all", label: "Все мои курсы" },
+  { key: "internal", label: "Внутренние" },
+  { key: "external", label: "Внешние" },
+  { key: "requests", label: "Мои заявки" },
+  { key: "completed", label: "Завершённые" },
+] as const;
+
+function sortItems(items: LearningItem[]) {
+  return [...items].sort((a, b) => {
+    const aDate = a.enrollment.target_completion_date || a.enrollment.updated_at || a.enrollment.created_at;
+    const bDate = b.enrollment.target_completion_date || b.enrollment.updated_at || b.enrollment.created_at;
+    return String(aDate).localeCompare(String(bDate));
+  });
+}
 
 export default function MyLearningPage() {
-  const [tab, setTab] = useState<"internal" | "external">("internal");
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState(searchParams.get("tab") || "all");
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [requests, setRequests] = useState<ExternalRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [reviewing, setReviewing] = useState<{ enrollmentId: string; courseId: string } | null>(null);
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
-  const [requestForm, setRequestForm] = useState({
-    title: "",
-    provider_name: "",
-    provider_url: "",
-    program_description: "",
-    justification: "",
-    cost_amount: "",
-    cost_currency: "RUB",
-    requested_start_date: "",
-    requested_end_date: "",
-    estimated_duration_hours: "",
-    budget_code: ""
-  });
 
   async function load() {
     setLoading(true);
     try {
-      const [courses, enrollments, requests] = await Promise.all([
+      const [courseData, enrollmentData, requestData] = await Promise.all([
         api.listCourses(),
         api.myEnrollments(),
-        api.myExternalRequests()
+        api.myExternalRequests(),
       ]);
-      setCourses(courses);
-      setEnrollments(enrollments);
-      setRequests(requests);
+      setCourses(courseData);
+      setEnrollments(enrollmentData);
+      setRequests(requestData);
     } catch (error) {
-      const message = error instanceof ApiError ? error.detail : "Не удалось загрузить обучение";
-      toast.error(message);
+      toast.error(error instanceof ApiError ? error.detail : "Не удалось загрузить мои курсы");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const urlTab = new URLSearchParams(window.location.search).get("tab");
-      if (urlTab === "external") {
-        setTab("external");
-      }
-    }
     void load();
   }, []);
 
-  const internalItems = useMemo(() => {
-    return enrollments
-      .map((enrollment) => ({
-        enrollment,
-        course: courses.find((course) => course.id === enrollment.course_id)
-      }))
-      .filter((item) => item.course);
-  }, [courses, enrollments]);
+  const allItems = useMemo(
+    () => enrollments.map((enrollment) => ({ enrollment, course: courses.find((course) => course.id === enrollment.course_id) })),
+    [enrollments, courses]
+  );
 
-  async function completeEnrollment(enrollmentId: string) {
-    setBusyId(enrollmentId);
-    try {
-      await api.completeEnrollment(enrollmentId);
-      toast.success("Курс завершён, сертификат сформирован");
-      await load();
-    } catch (error) {
-      const message = error instanceof ApiError ? error.detail : "Не удалось завершить курс";
-      toast.error(message);
-    } finally {
-      setBusyId(null);
-    }
-  }
+  const activeItems = useMemo(() => sortItems(allItems.filter((item) => item.enrollment.status !== "completed")), [allItems]);
+  const internalItems = useMemo(() => activeItems.filter((item) => item.course?.course_type === "internal"), [activeItems]);
+  const externalItems = useMemo(() => activeItems.filter((item) => item.course?.course_type === "external"), [activeItems]);
+  const completedItems = useMemo(
+    () => [...allItems.filter((item) => item.enrollment.status === "completed")].sort((a, b) => String(b.enrollment.completed_at || b.enrollment.updated_at || "").localeCompare(String(a.enrollment.completed_at || a.enrollment.updated_at || ""))),
+    [allItems]
+  );
 
-  async function submitReview() {
-    if (!reviewing) return;
-    setBusyId(reviewing.enrollmentId);
-    try {
-      await api.createReview({
-        enrollment_id: reviewing.enrollmentId,
-        course_id: reviewing.courseId,
-        rating: reviewForm.rating,
-        comment: reviewForm.comment
-      });
-      toast.success("Отзыв отправлен");
-      setReviewing(null);
-      setReviewForm({ rating: 5, comment: "" });
-    } catch (error) {
-      const message = error instanceof ApiError ? error.detail : "Не удалось оставить отзыв";
-      toast.error(message);
-    } finally {
-      setBusyId(null);
-    }
-  }
+  if (loading) return <AppShell title="Мои курсы" subtitle="Загрузка персонального трека"><PageLoader /></AppShell>;
 
-  async function submitExternalRequest(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusyId("external-form");
-    try {
-      await api.createExternalRequest({
-        title: requestForm.title,
-        provider_name: requestForm.provider_name,
-        provider_url: requestForm.provider_url || undefined,
-        program_description: requestForm.program_description || undefined,
-        justification: requestForm.justification,
-        cost_amount: Number(requestForm.cost_amount),
-        cost_currency: requestForm.cost_currency,
-        requested_start_date: requestForm.requested_start_date || undefined,
-        requested_end_date: requestForm.requested_end_date || undefined,
-        estimated_duration_hours: requestForm.estimated_duration_hours ? Number(requestForm.estimated_duration_hours) : undefined,
-        budget_code: requestForm.budget_code || undefined
-      });
-      toast.success("Заявка на внешний курс отправлена");
-      setRequestForm({
-        title: "",
-        provider_name: "",
-        provider_url: "",
-        program_description: "",
-        justification: "",
-        cost_amount: "",
-        cost_currency: "RUB",
-        requested_start_date: "",
-        requested_end_date: "",
-        estimated_duration_hours: "",
-        budget_code: ""
-      });
-      await load();
-      setTab("external");
-    } catch (error) {
-      const message = error instanceof ApiError ? error.detail : "Не удалось создать заявку";
-      toast.error(message);
-    } finally {
-      setBusyId(null);
-    }
-  }
+  const activeList = tab === "internal" ? internalItems : tab === "external" ? externalItems : activeItems;
 
   return (
-    <AppShell title="Мое обучение" subtitle="Все внутренние курсы, внешний workflow и завершение обучения в одном разделе">
+    <AppShell title="Мои курсы">
       <div className="card card-pad">
-        <div className="inline-flex rounded-2xl bg-slate-100 p-1">
+        <div className="flex flex-wrap gap-2">
           {tabs.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setTab(item.id)}
-              className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${tab === item.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
-                }`}
-            >
+            <button key={item.key} className={tab === item.key ? "btn-primary" : "btn-secondary"} onClick={() => setTab(item.key)}>
               {item.label}
             </button>
           ))}
         </div>
       </div>
 
-      {loading ? (
-        <div className="mt-6 card card-pad">
-          <div className="skeleton h-6 w-56" />
-          <div className="mt-6 space-y-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="rounded-3xl border border-slate-200 p-5">
-                <div className="skeleton h-5 w-40" />
-                <div className="mt-3 skeleton h-4 w-full" />
+      <div className="mt-6 space-y-8">
+        {(tab === "all" || tab === "internal" || tab === "external") ? (
+          <section>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  {tab === "internal" ? "Внутренние курсы" : tab === "external" ? "Внешние курсы" : "Активные курсы"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Прогресс, выполнение заданий и завершение курса доступны только после открытия курса внутри этого раздела.
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
-      ) : tab === "internal" ? (
-        <section className="mt-6 space-y-6">
-          {internalItems.length === 0 ? (
-            <EmptyState
-              title="Пока нет записей на внутренние курсы"
-              description="После записи курс появится здесь. Ты сможешь отслеживать статус, завершение и отправлять отзыв."
-            />
-          ) : (
-            internalItems.map(({ enrollment, course }) => (
-              <div key={enrollment.id} className="card card-pad">
-                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">{course?.course_type}</p>
-                    <h3 className="mt-2 text-xl font-bold text-slate-900">{course?.title}</h3>
-                    <p className="mt-2 text-sm text-slate-500">
-                      {course?.description || "Курс уже связан с пользователем через enrollment и готов к завершению."}
-                    </p>
-                  </div>
-                  <StatusBadge status={enrollment.status} />
-                </div>
-
-                <div className="mt-5">
-                  <div className="mb-2 flex items-center justify-between text-sm text-slate-500">
-                    <span>Прогресс</span>
-                    <span>{enrollment.progress_percent}%</span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full bg-brand-600 transition-all"
-                      style={{ width: `${enrollment.progress_percent}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-5 flex flex-wrap gap-3">
-                  {enrollment.status !== "completed" ? (
-                    <button className="btn-primary" onClick={() => completeEnrollment(enrollment.id)} disabled={busyId === enrollment.id}>
-                      {busyId === enrollment.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                      Завершить курс
-                    </button>
-                  ) : (
-                    <button
-                      className="btn-secondary"
-                      onClick={() => setReviewing({ enrollmentId: enrollment.id, courseId: enrollment.course_id })}
-                    >
-                      <Star className="mr-2 h-4 w-4" />
-                      Оценить курс
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-
-          {reviewing ? (
-            <div className="card card-pad">
-              <h3 className="text-lg font-bold text-slate-900">Оценка курса</h3>
-              <div className="mt-4 grid gap-4 md:grid-cols-[180px_1fr]">
-                <div>
-                  <label className="label">Оценка</label>
-                  <select
-                    className="input"
-                    value={reviewForm.rating}
-                    onChange={(e) => setReviewForm((s) => ({ ...s, rating: Number(e.target.value) }))}
-                  >
-                    {[5, 4, 3, 2, 1].map((score) => (
-                      <option key={score} value={score}>
-                        {score}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Комментарий</label>
-                  <textarea
-                    className="input h-28 py-3"
-                    value={reviewForm.comment}
-                    onChange={(e) => setReviewForm((s) => ({ ...s, comment: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="mt-4 flex gap-3">
-                <button className="btn-primary" onClick={submitReview} disabled={busyId === reviewing.enrollmentId}>
-                  {busyId === reviewing.enrollmentId ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Отправить отзыв"}
-                </button>
-                <button className="btn-secondary" onClick={() => setReviewing(null)}>
-                  Отмена
-                </button>
-              </div>
+              <Link href={tab === "external" ? "/courses?tab=external" : "/courses"} className="text-sm font-medium text-brand-700 hover:underline">
+                Открыть каталог
+              </Link>
             </div>
-          ) : null}
-        </section>
-      ) : (
-        <section className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="space-y-4">
-            {requests.map((request) => (
-              <div key={request.id} className="card card-pad">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">{request.title}</h3>
-                    <p className="mt-1 text-sm text-slate-500">{request.provider_name}</p>
-                  </div>
-                  <StatusBadge status={request.status} />
-                </div>
-                <div className="mt-4 rounded-3xl bg-slate-50 p-4 text-sm text-slate-600">
-                  Стоимость: {request.cost_amount} {request.cost_currency}
-                </div>
-              </div>
-            ))}
-            {requests.length === 0 ? (
-              <EmptyState
-                title="Внешних заявок пока нет"
-                description="Создай новую заявку справа. После отправки она уйдет в workflow согласования."
-              />
-            ) : null}
-          </div>
 
-          <div className="card card-pad">
-            <div className="mb-4 flex items-center gap-2 text-brand-700">
-              <PlusCircle className="h-5 w-5" />
-              <h3 className="text-lg font-bold text-slate-900">Новая заявка на внешний курс</h3>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {activeList.map(({ enrollment, course }) => {
+                if (!course) return null;
+                const isExternal = course.course_type === "external";
+                return (
+                  <article key={enrollment.id} className="card card-pad">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className={`text-xs font-semibold uppercase tracking-wide ${isExternal ? "text-emerald-700" : "text-brand-700"}`}>
+                          {isExternal ? "Внешний курс" : "Внутренний курс"}
+                        </div>
+                        <h3 className="mt-2 text-lg font-semibold text-slate-900">{course.title}</h3>
+                        <div className="mt-1 text-sm text-slate-500">{course.provider_name || "ALROSA Academy"}</div>
+                      </div>
+                      <StatusBadge status={enrollment.status} />
+                    </div>
+
+                    <p className="mt-3 text-sm text-slate-500">{course.summary || course.description || "Курс доступен в треке обучения."}</p>
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <div className="panel-muted p-4">
+                        <div className="flex items-center justify-between text-sm text-slate-500">
+                          <span>Прогресс</span>
+                          <span>{enrollment.progress_percent}%</span>
+                        </div>
+                        <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-200">
+                          <div className="h-full rounded-full bg-brand-700" style={{ width: `${Math.max(enrollment.progress_percent, 4)}%` }} />
+                        </div>
+                      </div>
+                      <div className="panel-muted p-4 text-sm text-slate-600">
+                        <div className="flex items-center gap-2"><Clock3 className="h-4 w-4" />Дедлайн</div>
+                        <div className="mt-2 font-semibold text-slate-900">{enrollment.target_completion_date ? formatDate(enrollment.target_completion_date) : "Не задан"}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-[24px] border border-slate-200 p-4 text-sm text-slate-600">
+                      {isExternal
+                        ? "Менять процент прохождения и завершать внешний курс можно только после открытия этой карточки из раздела «Мои курсы»."
+                        : "Внутренний курс завершается только после выполнения всех заданий внутри рабочей карточки курса."}
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <Link href={`/my-learning/${course.id}`} className="btn-primary"><ArrowRight className="h-4 w-4" />Открыть курс</Link>
+                      <Link href={`/courses/${course.id}`} className="btn-secondary"><Target className="h-4 w-4" />Карточка в каталоге</Link>
+                      {course.provider_url ? <a href={course.provider_url} target="_blank" rel="noreferrer" className="btn-secondary"><ExternalLink className="h-4 w-4" />К провайдеру</a> : null}
+                    </div>
+                  </article>
+                );
+              })}
+
+              {activeList.length === 0 ? (
+                <EmptyState
+                  title="Активных курсов нет"
+                  description="После записи или назначения курсы появятся здесь. Завершённые курсы смотри в отдельной вкладке."
+                  action={<Link href="/courses" className="btn-primary"><PlusCircle className="h-4 w-4" />Открыть каталог</Link>}
+                />
+              ) : null}
             </div>
-            <form className="space-y-4" onSubmit={submitExternalRequest}>
-              <div>
-                <label className="label">Название курса</label>
-                <input className="input" required value={requestForm.title} onChange={(e) => setRequestForm((s) => ({ ...s, title: e.target.value }))} />
-              </div>
-              <div>
-                <label className="label">Провайдер</label>
-                <input className="input" required value={requestForm.provider_name} onChange={(e) => setRequestForm((s) => ({ ...s, provider_name: e.target.value }))} />
-              </div>
-              <div>
-                <label className="label">Ссылка</label>
-                <input className="input" value={requestForm.provider_url} onChange={(e) => setRequestForm((s) => ({ ...s, provider_url: e.target.value }))} />
-              </div>
-              <div>
-                <label className="label">Описание программы</label>
-                <textarea className="input h-28 py-3" value={requestForm.program_description} onChange={(e) => setRequestForm((s) => ({ ...s, program_description: e.target.value }))} />
-              </div>
-              <div>
-                <label className="label">Обоснование</label>
-                <textarea className="input h-28 py-3" required value={requestForm.justification} onChange={(e) => setRequestForm((s) => ({ ...s, justification: e.target.value }))} />
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="label">Стоимость</label>
-                  <input className="input" type="number" min="0" required value={requestForm.cost_amount} onChange={(e) => setRequestForm((s) => ({ ...s, cost_amount: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Валюта</label>
-                  <input className="input" value={requestForm.cost_currency} onChange={(e) => setRequestForm((s) => ({ ...s, cost_currency: e.target.value }))} />
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="label">Дата начала</label>
-                  <input className="input" type="date" value={requestForm.requested_start_date} onChange={(e) => setRequestForm((s) => ({ ...s, requested_start_date: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Дата окончания</label>
-                  <input className="input" type="date" value={requestForm.requested_end_date} onChange={(e) => setRequestForm((s) => ({ ...s, requested_end_date: e.target.value }))} />
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="label">Часы</label>
-                  <input className="input" type="number" min="0" value={requestForm.estimated_duration_hours} onChange={(e) => setRequestForm((s) => ({ ...s, estimated_duration_hours: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Код бюджета</label>
-                  <input className="input" value={requestForm.budget_code} onChange={(e) => setRequestForm((s) => ({ ...s, budget_code: e.target.value }))} />
-                </div>
-              </div>
-              <button className="btn-primary h-12 w-full" disabled={busyId === "external-form"}>
-                {busyId === "external-form" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Отправить на согласование"}
-              </button>
-            </form>
-          </div>
-        </section>
-      )}
+          </section>
+        ) : null}
+
+        {tab === "completed" ? (
+          <section>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-slate-900">Завершённые курсы</h2>
+              <p className="mt-1 text-sm text-slate-500">Все уже закрытые внутренние и внешние программы собраны отдельно.</p>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {completedItems.map(({ enrollment, course }) => (
+                <article key={enrollment.id} className="card card-pad">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                        {course?.course_type === "external" ? "Внешний курс" : "Внутренний курс"}
+                      </div>
+                      <h3 className="mt-2 text-lg font-semibold text-slate-900">{course?.title || "Курс"}</h3>
+                      <div className="mt-1 text-sm text-slate-500">Завершён: {formatDateTime(enrollment.completed_at || enrollment.updated_at)}</div>
+                    </div>
+                    <StatusBadge status="completed" />
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="panel-muted p-4">
+                      <div className="text-sm text-slate-500">Финальный прогресс</div>
+                      <div className="mt-2 text-3xl font-bold text-slate-900">100%</div>
+                    </div>
+                    <div className="panel-muted p-4">
+                      <div className="text-sm text-slate-500">Провайдер</div>
+                      <div className="mt-2 text-base font-semibold text-slate-900">{course?.provider_name || "ALROSA Academy"}</div>
+                    </div>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {course ? <Link href={`/my-learning/${course.id}`} className="btn-secondary"><Target className="h-4 w-4" />Открыть курс</Link> : null}
+                    {course ? <Link href={`/courses/${course.id}`} className="btn-secondary">Карточка в каталоге</Link> : null}
+                    <Link href="/certificates" className="btn-primary"><Award className="h-4 w-4" />Сертификаты</Link>
+                  </div>
+                </article>
+              ))}
+              {completedItems.length === 0 ? <EmptyState title="Пока нет завершённых курсов" description="Как только курс будет закрыт, он появится в этой вкладке." /> : null}
+            </div>
+          </section>
+        ) : null}
+
+        {tab === "requests" ? (
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Мои заявки на одобрение</h2>
+              <Link href="/courses?tab=external" className="text-sm font-medium text-brand-700 hover:underline">Создать новую</Link>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {requests.map((request) => (
+                <article key={request.id} className="card card-pad">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900">{request.title}</h3>
+                      <div className="mt-1 text-sm text-slate-500">{request.provider_name}</div>
+                    </div>
+                    <StatusBadge status={request.status} />
+                  </div>
+                  <p className="mt-3 text-sm text-slate-500">{request.justification}</p>
+                  <div className="mt-4 panel-muted p-4 text-sm text-slate-600">Стоимость: {request.cost_amount} {request.cost_currency}</div>
+                </article>
+              ))}
+              {requests.length === 0 ? <EmptyState title="Заявок пока нет" description="После отправки заявки на внешний курс она появится здесь со статусом согласования." /> : null}
+            </div>
+          </section>
+        ) : null}
+      </div>
     </AppShell>
   );
 }

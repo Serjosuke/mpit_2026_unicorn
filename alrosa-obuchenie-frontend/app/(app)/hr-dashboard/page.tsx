@@ -48,14 +48,14 @@ export default function HRDashboardPage() {
   const summary = payload?.summary;
 
   return (
-    <AppShell title="Монитор прогресса" subtitle="Сводка по отделам, командам и сотрудникам в стиле кабинета руководителя">
+    <AppShell title="Монитор прогресса" subtitle="Общий срез обучения для HR и менеджеров, с поиском, фильтрацией и мобильной адаптацией.">
       <section className="card card-pad">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm text-slate-500">HR и менеджеры видят общий срез обучения, отставания по спринтам и роли сотрудников в команде.</p>
           </div>
           <button
-            className="btn-secondary"
+            className="btn-secondary w-full sm:w-auto"
             onClick={async () => {
               const token = getToken();
               if (!token) {
@@ -76,7 +76,7 @@ export default function HRDashboardPage() {
           </button>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-5">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {[
             { label: "Отстают на 3+ спринта", value: summary?.critical ?? 0, key: "critical" },
             { label: "Отстают на 1–2 спринта", value: summary?.warning ?? 0, key: "warning" },
@@ -95,7 +95,7 @@ export default function HRDashboardPage() {
           <div className="rounded-3xl border border-slate-200 p-4">
             <div className="text-sm font-semibold text-slate-900">Отделы</div>
             <div className="mt-3 space-y-3">
-              {payload?.departments.map((dep) => (
+              {(payload?.departments.length ? payload.departments : departments.map((dep) => ({ id: dep.id, name: dep.name, employees: 0, teams: 0 }))).map((dep) => (
                 <button
                   key={dep.id ?? dep.name}
                   className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${departmentId === dep.id ? "border-brand-500 bg-brand-50" : "border-slate-200"}`}
@@ -107,9 +107,9 @@ export default function HRDashboardPage() {
                 >
                   <div>
                     <div className="font-medium text-slate-900">{dep.name ?? "Без названия"}</div>
-                    <div className="text-sm text-slate-500">{dep.teams} команд</div>
+                    <div className="text-sm text-slate-500">{dep.teams ?? 0} команд</div>
                   </div>
-                  <div className="text-2xl font-semibold text-slate-900">{dep.employees}</div>
+                  <div className="text-2xl font-semibold text-slate-900">{dep.employees ?? 0}</div>
                 </button>
               ))}
             </div>
@@ -117,11 +117,11 @@ export default function HRDashboardPage() {
 
           <div className="rounded-3xl border border-slate-200 p-4">
             <div className="text-sm font-semibold text-slate-900">Команды</div>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {payload?.teams.map((team, index) => (
                 <div key={team.team_name ?? `team-${index}`} className="rounded-2xl border border-slate-200 p-4">
                   <div className="flex items-center gap-2 text-slate-900"><Users className="h-4 w-4" /> {team.team_name ?? "Без команды"}</div>
-                  <div className="mt-2 text-sm text-slate-500">{team.departments?.join(", ")}</div>
+                  <div className="mt-2 text-sm text-slate-500">{team.departments?.join(", ") || "—"}</div>
                   <div className="mt-3 text-xl font-semibold text-slate-900">{team.employees}</div>
                 </div>
               ))}
@@ -131,17 +131,64 @@ export default function HRDashboardPage() {
       </section>
 
       <section className="mt-6 card card-pad">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border border-slate-200 px-4">
             <Search className="h-4 w-4 text-slate-400" />
             <input className="w-full bg-transparent text-sm outline-none" placeholder="Поиск по ФИО, отделу, команде, роли или курсу" value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
           {departmentId ? (
-            <button className="btn-secondary" onClick={() => { setDepartmentId(""); void load(); }}>Сбросить фильтр</button>
+            <button className="btn-secondary w-full sm:w-auto" onClick={() => { setDepartmentId(""); void load(); }}>Сбросить фильтр</button>
           ) : null}
         </div>
 
-        <div className="mt-5 overflow-x-auto">
+        <div className="mt-5 space-y-4 md:hidden">
+          {rows.map((row) => (
+            <article key={`${row.user_id}-${row.course_title}`} className="rounded-[24px] border border-slate-200 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-semibold text-slate-900">{row.employee_name}</div>
+                  <div className="text-xs text-slate-500">{row.position_title}</div>
+                </div>
+                <span className={`badge ${statusStyles[row.status_group] || statusStyles.not_started}`}>{row.status}</span>
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="panel-muted p-3">
+                  <div className="text-xs text-slate-500">Отдел / команда</div>
+                  <div className="mt-1 text-sm font-medium text-slate-900">{row.department_name}</div>
+                  <div className="text-xs text-slate-500">{row.team_name}</div>
+                </div>
+                <div className="panel-muted p-3">
+                  <div className="text-xs text-slate-500">Курс</div>
+                  <div className="mt-1 text-sm font-medium text-slate-900">{row.course_title}</div>
+                </div>
+                <div className="panel-muted p-3">
+                  <div className="text-xs text-slate-500">Последняя активность</div>
+                  <div className="mt-1 text-sm font-medium text-slate-900">{row.last_activity}</div>
+                </div>
+                <div className="panel-muted p-3">
+                  <div className="text-xs text-slate-500">Выпуск по плану</div>
+                  <div className="mt-1 text-sm font-medium text-slate-900">{row.planned_completion || "—"}</div>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-sm text-slate-500">
+                  <span>Прогресс</span>
+                  <span>{row.progress_percent}%</span>
+                </div>
+                <div className="mt-2 h-2.5 rounded-full bg-slate-100">
+                  <div className={`h-2.5 rounded-full ${row.status_group === "critical" ? "bg-rose-500" : row.status_group === "warning" ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.max(row.progress_percent, 6)}%` }} />
+                </div>
+              </div>
+              {row.sprint_lag > 0 ? (
+                <div className="mt-3 flex items-center gap-1 text-xs text-rose-600"><AlertCircle className="h-3 w-3" /> Было {row.sprint_lag} перехода по спринтам</div>
+              ) : row.status_group === "ok" || row.status_group === "completed" ? (
+                <div className="mt-3 flex items-center gap-1 text-xs text-emerald-600"><CheckCircle2 className="h-3 w-3" /> В графике</div>
+              ) : null}
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-5 hidden overflow-x-auto md:block">
           <table className="min-w-full text-sm">
             <thead className="text-left text-slate-500">
               <tr className="border-b border-slate-200">
@@ -156,7 +203,7 @@ export default function HRDashboardPage() {
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.user_id} className="border-b border-slate-100 align-top">
+                <tr key={`${row.user_id}-${row.course_title}`} className="border-b border-slate-100 align-top">
                   <td className="py-4 pr-4">
                     <div className="font-semibold text-slate-900">{row.employee_name}</div>
                     <div className="text-xs text-slate-500">{row.position_title}</div>

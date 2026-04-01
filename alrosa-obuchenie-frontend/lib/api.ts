@@ -1,7 +1,7 @@
 "use client";
 
 import { clearToken, getToken } from "@/lib/storage";
-import type { Certificate, Course, Enrollment, ExternalRequest, Notification, Review, Token, User, CalendarEvent, HRDashboardMetrics, OutlookStatus, Department, MonitorPayload, CourseTrack, HomeMetrics, UserProfileSummary, SmartSearchPayload, HRExternalAssignPayload, HRExternalAssignResult } from "@/lib/types";
+import type { Certificate, Course, Enrollment, ExternalRequest, Notification, Review, Token, User, CalendarEvent, HRDashboardMetrics, OutlookStatus, Department, MonitorPayload, CourseTrack, HomeMetrics, UserProfileSummary, SmartSearchPayload, HRExternalAssignPayload, HRExternalAssignResult, ManagerCourseDraftInput } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -37,10 +37,16 @@ export const api = {
   assignExternalCourseBulk: (payload: Record<string, unknown>) => request<{ created: number; reminders: number; course_ids: string[] }>("/courses/assign-external-bulk", { method: "POST", body: JSON.stringify(payload) }),
   roleSuggestions: (q = "") => request<{ items: string[] }>(`/courses/role-suggestions${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   groupEnrollInternal: (payload: { course_id: string; user_ids: string[] }) => request<{ created: number }>("/courses/group-enroll", { method: "POST", body: JSON.stringify(payload) }),
+  createManagerDraftCourse: (payload: ManagerCourseDraftInput) => request<Course>("/courses/manager-drafts", { method: "POST", body: JSON.stringify(payload) }),
+  approveCourse: (courseId: string) => request<Course>(`/courses/${courseId}/hr-approve`, { method: "POST" }),
+  rejectCourse: (courseId: string) => request<Course>(`/courses/${courseId}/hr-reject`, { method: "POST" }),
   getCourse: (courseId: string) => request<Course>(`/courses/${courseId}`),
   enroll: (course_id: string) => request<Enrollment>("/enrollments/", { method: "POST", body: JSON.stringify({ course_id }) }),
   myEnrollments: () => request<Enrollment[]>("/enrollments/mine"),
   completeEnrollment: (enrollmentId: string) => request<Enrollment>(`/enrollments/${enrollmentId}/complete`, { method: "POST" }),
+
+  updateExternalProgress: (enrollmentId: string, progress_percent: number) => request<Enrollment>(`/enrollments/${enrollmentId}/progress`, { method: "PATCH", body: JSON.stringify({ progress_percent }) }),
+  completeExternalWithCertificate: (payload: { enrollmentId: string; source?: string; issuer_name?: string; certificate_number?: string; issue_date?: string; file: File }) => { const fd = new FormData(); fd.append("source", payload.source || "external_course"); if (payload.issuer_name) fd.append("issuer_name", payload.issuer_name); if (payload.certificate_number) fd.append("certificate_number", payload.certificate_number); if (payload.issue_date) fd.append("issue_date", payload.issue_date); fd.append("file", payload.file); return request<Enrollment>(`/enrollments/${payload.enrollmentId}/complete-external`, { method: "POST", body: fd }); },
   myExternalRequests: () => request<ExternalRequest[]>("/external-requests/mine"),
   pendingExternalRequests: () => request<ExternalRequest[]>("/external-requests/pending"),
   createExternalRequest: (payload: Record<string, unknown>) => request<ExternalRequest>("/external-requests/", { method: "POST", body: JSON.stringify(payload) }),

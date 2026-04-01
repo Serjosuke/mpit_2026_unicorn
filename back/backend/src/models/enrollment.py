@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
@@ -18,6 +18,7 @@ class Enrollment(UUIDMixin, TimestampMixin, Base):
 
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    target_completion_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     source: Mapped[str | None] = mapped_column(String(50), nullable=True)
 

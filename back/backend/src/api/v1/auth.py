@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from fastapi.security import OAuth2PasswordRequestForm
 
 from src.api.deps import get_current_user
 from src.core.enums import UserRole
@@ -44,6 +45,15 @@ def login(payload: LoginIn, db: DBSession):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
     return Token(access_token=create_access_token(user.email))
 
+@router.post("/token", response_model=Token)
+def login_oauth(form_data: OAuth2PasswordRequestForm = Depends(), db: DBSession = None):
+    user = db.scalar(select(User).where(User.email == form_data.username))
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+        )
+    return Token(access_token=create_access_token(user.email))  
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):

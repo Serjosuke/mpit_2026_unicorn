@@ -4,20 +4,23 @@ import { motion } from "framer-motion";
 
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { Sidebar } from "@/components/layout/sidebar";
 
 export function AppShell({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <div className="container-page py-4 pb-24 lg:pb-6">
-      <div className="flex gap-4 xl:gap-6">
-        <Sidebar />
-        <main className="min-w-0 flex-1">
-          <Header title={title} subtitle={subtitle} />
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
-            {children}
-          </motion.div>
-        </main>
-      </div>
+    <div className="min-h-screen pb-28 lg:pb-10">
+      <Header />
+      <main className="container-page pt-4 sm:pt-6">
+        <section className="mb-6 rounded-[28px] border border-slate-200 bg-[#0f172a] px-4 py-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.22)] sm:px-7 sm:py-6">
+          <div className="max-w-4xl">
+            <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/75">ALROSA LearnFlow</div>
+            <h1 className="mt-4 text-2xl font-bold tracking-tight sm:text-4xl">{title}</h1>
+            {subtitle ? <p className="mt-3 max-w-3xl text-sm leading-6 text-white/75 sm:text-base">{subtitle}</p> : null}
+          </div>
+        </section>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }}>
+          {children}
+        </motion.div>
+      </main>
       <MobileNav />
     </div>
   );

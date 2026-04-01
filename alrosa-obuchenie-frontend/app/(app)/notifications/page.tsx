@@ -41,7 +41,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <AppShell title="Уведомления" subtitle="Все системные сообщения, события обучения и статусы workflow">
+    <AppShell title="Уведомления">
       <div className="space-y-4">
         {loading ? (
           Array.from({ length: 6 }).map((_, index) => (

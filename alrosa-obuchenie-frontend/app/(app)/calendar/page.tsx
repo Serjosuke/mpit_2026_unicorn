@@ -51,7 +51,7 @@ export default function CalendarPage() {
   const remindersCount = useMemo(() => events.filter((item) => item.is_reminder_only).length, [events]);
 
   return (
-    <AppShell title="Календарь" subtitle="Внутренние курсы идут выше по приоритету. Если внешний курс пересекается с внутренним слотом, в календарь попадает напоминание по сроку.">
+    <AppShell title="Календарь">
       <div className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
         <section className="card card-pad">
           <div className="flex items-center gap-3"><div className="rounded-3xl bg-blue-50 p-3 text-blue-700"><CalendarRange className="h-5 w-5" /></div><div><h3 className="text-xl font-bold">События обучения</h3><p className="text-sm text-slate-500">Расписание внутренних групп, уроков, внешних курсов и напоминаний по срокам.</p></div></div>

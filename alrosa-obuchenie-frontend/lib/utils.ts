@@ -31,7 +31,9 @@ export function courseStatusLabel(status: string) {
   const map: Record<string, string> = {
     draft: "Черновик",
     published: "Опубликован",
-    archived: "Архив"
+    archived: "Архив",
+    pending_hr_approval: "Ждёт HR",
+    rejected_by_hr: "Отклонён HR"
   };
   return map[status] ?? status;
 }

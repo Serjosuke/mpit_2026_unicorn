@@ -1,6 +1,8 @@
 from datetime import date, datetime
 from uuid import UUID
+
 from pydantic import BaseModel
+
 from src.schemas.common import ORMModel
 
 
@@ -46,6 +48,11 @@ class CourseOut(ORMModel):
     provider_url: str | None = None
     duration_hours: float | None = None
     created_at: datetime
+    created_by: UUID | None = None
+    total_enrollments_count: int = 0
+    active_enrollments_count: int = 0
+    completed_enrollments_count: int = 0
+    session_days: list[str] = []
 
 
 class SmartCourseResult(BaseModel):
@@ -61,6 +68,10 @@ class SmartCourseResult(BaseModel):
     price_amount: float | None = None
     price_currency: str | None = None
     freshness_label: str | None = None
+    difficulty: str | None = None
+    average_rating: float | None = None
+    ai_rating: float | None = None
+    ai_review: str | None = None
     score: float
     why_recommended: str
     course_id: UUID | None = None
@@ -138,6 +149,39 @@ class HRBulkExternalAssignOut(BaseModel):
     created: int
     reminders: int
     course_ids: list[UUID] = []
+
+
+class ManagerCourseLessonIn(BaseModel):
+    title: str
+    content: str | None = None
+    estimated_minutes: int | None = None
+
+
+class ManagerCourseModuleIn(BaseModel):
+    title: str
+    description: str | None = None
+    lessons: list[ManagerCourseLessonIn]
+
+
+class ManagerCourseSessionIn(BaseModel):
+    title: str
+    starts_at: datetime
+    ends_at: datetime
+    location: str | None = None
+    meeting_url: str | None = None
+
+
+class ManagerInternalCourseCreateIn(BaseModel):
+    title: str
+    summary: str | None = None
+    description: str | None = None
+    skill_tags: str | None = None
+    level: str | None = None
+    delivery_mode: str = "online"
+    duration_hours: float | None = None
+    provider_name: str | None = None
+    modules: list[ManagerCourseModuleIn]
+    sessions: list[ManagerCourseSessionIn] = []
 
 
 class LessonTrackOut(ORMModel):
